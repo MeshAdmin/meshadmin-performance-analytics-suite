@@ -1,0 +1,229 @@
+/* Tritanopia-friendly Color Scheme Variables 
+ * Enhanced for better distinction between colors for users with Tritanopia
+ * Using black background with dark red accents for clarity
+ */
+:root {
+    --tritanopia-red: #8B0000;         /* Dark red - main accent color */
+    --tritanopia-darker-red: #660000;  /* Darker red - for hover states */
+    --tritanopia-light-red: #b30000;   /* Lighter red - for icons and highlights */
+    --tritanopia-background: #121212;  /* Very dark gray - main background */
+    --tritanopia-card-bg: #1e1e1e;     /* Slightly lighter background for cards */
+    --tritanopia-border: #333333;      /* Dark gray - for borders */
+    --tritanopia-text: #e0e0e0;        /* Light gray - for main text */
+    --tritanopia-text-muted: #a0a0a0;  /* Medium gray - for less important text */
+}
+
+/* General body styling */
+body {
+    background-color: var(--tritanopia-background);
+    color: var(--tritanopia-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar styling */
+.navbar {
+    background-color: #000000 !important;
+    border-bottom: 2px solid var(--tritanopia-red);
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: var(--tritanopia-text);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: var(--tritanopia-light-red);
+}
+
+.navbar-dark .navbar-nav .nav-link.active {
+    color: var(--tritanopia-light-red) !important;
+    font-weight: bold;
+}
+
+/* Card styling */
+.card {
+    background-color: var(--tritanopia-card-bg);
+    border-color: var(--tritanopia-border);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    border-bottom: 1px solid var(--tritanopia-border);
+}
+
+/* Button styling */
+.btn-primary, .btn-success, .btn-info, .btn-warning, .btn-danger {
+    background-color: var(--tritanopia-red);
+    border-color: var(--tritanopia-red);
+    color: var(--tritanopia-text);
+}
+
+.btn-primary:hover, .btn-success:hover, .btn-info:hover, .btn-warning:hover, .btn-danger:hover {
+    background-color: var(--tritanopia-darker-red);
+    border-color: var(--tritanopia-darker-red);
+    color: var(--tritanopia-text);
+}
+
+.btn-outline-primary, .btn-outline-success, .btn-outline-info, .btn-outline-warning, .btn-outline-danger {
+    border-color: var(--tritanopia-red);
+    color: var(--tritanopia-red);
+}
+
+.btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-info:hover, .btn-outline-warning:hover, .btn-outline-danger:hover {
+    background-color: var(--tritanopia-red);
+    border-color: var(--tritanopia-red);
+    color: var(--tritanopia-text);
+}
+
+/* Badge styling */
+.badge-primary, .badge-success, .badge-info, .badge-warning, .badge-danger {
+    background-color: var(--tritanopia-red);
+    color: var(--tritanopia-text);
+}
+
+/* Table styling */
+.table {
+    color: var(--tritanopia-text);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(139, 0, 0, 0.1);
+}
+
+/* Form styling */
+.form-control, .form-select {
+    background-color: var(--tritanopia-card-bg);
+    border-color: var(--tritanopia-border);
+    color: var(--tritanopia-text);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--tritanopia-card-bg);
+    border-color: var(--tritanopia-red);
+    color: var(--tritanopia-text);
+    box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.25);
+}
+
+.form-text {
+    color: var(--tritanopia-text-muted);
+}
+
+/* Custom classes for the Tritanopia-friendly theme */
+.text-accent {
+    color: var(--tritanopia-light-red);
+}
+
+.border-accent {
+    border-color: var(--tritanopia-red) !important;
+}
+
+.bg-accent {
+    background-color: var(--tritanopia-red);
+    color: var(--tritanopia-text);
+}
+
+/* Icon styling */
+.icon-accent {
+    color: var(--tritanopia-light-red);
+}
+
+/* Loading indicator */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    color: var(--tritanopia-red);
+}
+
+/* Flow table styles */
+.flow-table {
+    font-size: 0.9rem;
+}
+
+.flow-table th {
+    white-space: nowrap;
+}
+
+/* Protocol badge colors */
+.badge-tcp, .badge-udp, .badge-icmp, .badge-gre, .badge-esp, .badge-other {
+    background-color: var(--tritanopia-red);
+    color: var(--tritanopia-text);
+}
+
+/* Time period selector */
+.time-period-selector.active, .time-period-btn.active {
+    background-color: var(--tritanopia-red) !important;
+    border-color: var(--tritanopia-red) !important;
+    color: var(--tritanopia-text) !important;
+}
+
+/* Link styling */
+a {
+    color: var(--tritanopia-light-red);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--tritanopia-red);
+    text-decoration: underline;
+}
+
+/* List group styling */
+.list-group-item {
+    background-color: var(--tritanopia-card-bg);
+    color: var(--tritanopia-text);
+    border-color: var(--tritanopia-border);
+}
+
+/* Alert styling */
+.alert {
+    background-color: var(--tritanopia-card-bg);
+    border-color: var(--tritanopia-red);
+    color: var(--tritanopia-text);
+}
+
+/* MIB file card styling */
+.mib-file-card {
+    transition: all 0.2s ease;
+}
+
+.mib-file-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(139, 0, 0, 0.3);
+}
+
+/* Custom heading color */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--tritanopia-text);
+}
+
+/* Stats card styling */
+.stats-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--tritanopia-red);
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Chart styles for better tritanopia visibility */
+.chart-container {
+    background: var(--tritanopia-card-bg);
+    border-radius: 4px;
+    padding: 10px;
+}

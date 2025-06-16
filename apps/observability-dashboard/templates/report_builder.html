@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+
+{% block title %}Report Builder - Observability Dashboard{% endblock %}
+
+{% block page_title %}Report Builder{% endblock %}
+
+{% block head_extra %}
+<!-- Additional CSS for report builder -->
+<style>
+    .report-builder-container {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .report-form-container {
+        flex: 2;
+    }
+    
+    .report-preview-container {
+        flex: 3;
+        overflow: auto;
+    }
+    
+    .report-preview {
+        background-color: white;
+        color: #333;
+        padding: 30px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        min-height: 800px;
+    }
+    
+    .report-section {
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .section-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .drag-handle {
+        cursor: move;
+        padding: 5px;
+    }
+    
+    .parameter-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        margin-bottom: 10px;
+        padding: 10px;
+        background: var(--secondary-bg);
+        border-radius: 4px;
+    }
+    
+    .parameter-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+    }
+    
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border-color);
+        transition: .4s;
+        border-radius: 20px;
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+        background-color: var(--accent-color);
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+    
+    .condition-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+    
+    .preview-header {
+        margin-bottom: 30px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 20px;
+    }
+    
+    .preview-section {
+        margin-bottom: 30px;
+    }
+    
+    .preview-section h2 {
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    
+    .editable-title {
+        padding: 5px;
+        border-radius: 4px;
+    }
+    
+    .editable-title:focus {
+        outline: none;
+        background-color: var(--secondary-bg);
+    }
+</style>
+
+<!-- Include SortableJS for drag and drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div id="report-container" data-report-id="{{ report.id if report else '' }}">
+    <div class="report-toolbar mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 id="report-title" class="editable-title" contenteditable="true">
+                {{ report.name if report else 'New Report' }}
+            </h1>
+            
+            <div class="report-actions">
+                <button id="run-report-button" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Run Report
+                </button>
+                
+                <button id="save-report-button" class="btn btn-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save
+                </button>
+                
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item export-report" data-format="pdf">PDF</a>
+                        <a href="#" class="dropdown-item export-report" data-format="excel">Excel</a>
+                        <a href="#" class="dropdown-item export-report" data-format="csv">CSV</a>
+                        <a href="#" class="dropdown-item export-report" data-format="html">HTML</a>
+                        <a href="#" class="dropdown-item export-report" data-format="json">JSON</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-builder-container">
+        <!-- Report Form -->
+        <div class="report-form-container">
+            <div class="card">
+                <div class="card-body">
+                    <form id="report-form">
+                        <div class="form-group">
+                            <label for="report-name" class="form-label">Report Name</label>
+                            <input type="text" id="report-name" class="form-control" value="{{ report.name if report else '' }}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="report-description" class="form-label">Description</label>
+                            <textarea id="report-description" class="form-control" rows="2">{{ report.description if report else '' }}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="report-format" class="form-label">Output Format</label>
+                            <select id="report-format" class="form-control" required>
+                                <option value="pdf" {% if report and report.format == 'pdf' %}selected{% endif %}>PDF</option>
+                                <option value="excel" {% if report and report.format == 'excel' %}selected{% endif %}>Excel</option>
+                                <option value="csv" {% if report and report.format == 'csv' %}selected{% endif %}>CSV</option>
+                                <option value="html" {% if report and report.format == 'html' %}selected{% endif %}>HTML</option>
+                                <option value="json" {% if report and report.format == 'json' %}selected{% endif %}>JSON</option>
+                            </select>
+                        </div>
+                        
+                        <div id="format-options">
+                            <!-- Format specific options will be loaded here -->
+                        </div>
+                        
+                        <h4 class="mt-4 mb-3">Parameters</h4>
+                        <div id="parameter-container">
+                            {% if report and report.parameters %}
+                                {% for param in report.parameters %}
+                                <div class="parameter-row" id="param-{{ loop.index }}">
+                                    <div class="form-group">
+                                        <label class="form-label">Parameter Name</label>
+                                        <input type="text" class="form-control param-name" value="{{ param.name }}" placeholder="e.g., site_id">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Parameter Type</label>
+                                        <select class="form-control param-type">
+                                            <option value="string" {% if param.type == 'string' %}selected{% endif %}>Text</option>
+                                            <option value="number" {% if param.type == 'number' %}selected{% endif %}>Number</option>
+                                            <option value="date" {% if param.type == 'date' %}selected{% endif %}>Date</option>
+                                            <option value="boolean" {% if param.type == 'boolean' %}selected{% endif %}>Yes/No</option>
+                                            <option value="list" {% if param.type == 'list' %}selected{% endif %}>List</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Default Value</label>
+                                        <input type="text" class="form-control param-default" value="{{ param.default }}" placeholder="Default value">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Required</label>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="required-param-{{ loop.index }}" class="param-required" {% if param.required %}checked{% endif %}>
+                                            <label for="required-param-{{ loop.index }}"></label>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-danger remove-param" data-param-id="param-{{ loop.index }}">Remove</button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <button type="button" id="add-parameter-button" class="btn btn-secondary mt-2 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Parameter
+                        </button>
+                        
+                        <h4 class="mt-4 mb-3">Report Sections</h4>
+                        <div id="report-sections">
+                            {% if report and report.sections %}
+                                {% for section in report.sections %}
+                                <div class="report-section card" id="section-{{ loop.index }}">
+                                    <div class="card-header">
+                                        <div class="drag-handle">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                                            </svg>
+                                        </div>
+                                        <h3 class="section-title">{{ section.title }}</h3>
+                                        <div class="section-actions">
+                                            <button class="btn btn-icon btn-secondary edit-section" title="Edit Section">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn btn-icon btn-danger remove-section" title="Remove Section">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="section-content">
+                                            <!-- Section content rendered by JS -->
+                                        </div>
+                                        <div class="section-config" style="display: none;">
+                                            <input type="hidden" class="section-type" value="{{ section.type }}">
+                                            <input type="hidden" class="section-data" value="{{ section.data|tojson }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <button type="button" id="add-section-button" class="btn btn-secondary mt-3 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Section
+                        </button>
+                        
+                        <h4 class="mt-4 mb-3">Scheduling</h4>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" id="schedule-toggle" class="form-check-input" {% if report and report.schedule %}checked{% endif %}>
+                                <label for="schedule-toggle" class="form-check-label">Schedule this report</label>
+                            </div>
+                        </div>
+                        
+                        <div id="schedule-options" style="display: {% if report and report.schedule %}block{% else %}none{% endif %};">
+                            <div class="form-group">
+                                <label for="schedule-type" class="form-label">Schedule Type</label>
+                                <select id="schedule-type" class="form-control">
+                                    <option value="hourly" {% if report and report.schedule == 'hourly' %}selected{% endif %}>Hourly</option>
+                                    <option value="daily" {% if report and report.schedule == 'daily' %}selected{% endif %}>Daily</option>
+                                    <option value="weekly" {% if report and report.schedule == 'weekly' %}selected{% endif %}>Weekly</option>
+                                    <option value="monthly" {% if report and report.schedule == 'monthly' %}selected{% endif %}>Monthly</option>
+                                    <option value="custom" {% if report and report.schedule == 'custom' %}selected{% endif %}>Custom</option>
+                                </select>
+                            </div>
+                            
+                            <div id="custom-schedule" style="display: {% if report and report.schedule == 'custom' %}block{% else %}none{% endif %};">
+                                <div class="form-group">
+                                    <label for="schedule-cron" class="form-label">Cron Expression</label>
+                                    <input type="text" id="schedule-cron" class="form-control" 
+                                           value="{{ report.cron if report and report.cron else '0 0 * * *' }}" 
+                                           placeholder="e.g., 0 0 * * * (daily at midnight)">
+                                    <small class="text-muted">Format: minute hour day month weekday</small>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="schedule-recipients" class="form-label">Recipients (comma separated)</label>
+                                <input type="text" id="schedule-recipients" class="form-control" 
+                                       value="{{ report.recipients|join(', ') if report and report.recipients else '' }}" 
+                                       placeholder="email1@example.com, email2@example.com">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Report Preview -->
+        <div class="report-preview-container">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Preview</h3>
+                </div>
+                <div class="card-body">
+                    <div id="report-preview" class="report-preview">
+                        <!-- Preview content will be generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Include JavaScript libraries for report building -->
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize editable title
+        const titleElement = document.getElementById('report-title');
+        const nameInput = document.getElementById('report-name');
+        
+        // Sync title changes
+        titleElement.addEventListener('input', function() {
+            nameInput.value = titleElement.textContent;
+        });
+        
+        nameInput.addEventListener('input', function() {
+            titleElement.textContent = nameInput.value;
+        });
+        
+        // Initialize sortable sections
+        const reportSections = document.getElementById('report-sections');
+        if (reportSections) {
+            new Sortable(reportSections, {
+                handle: '.drag-handle',
+                animation: 150,
+                onEnd: function() {
+                    refreshPreview();
+                }
+            });
+        }
+        
+        // Initialize section content
+        document.querySelectorAll('.report-section').forEach(section => {
+            const type = section.querySelector('.section-type').value;
+            const dataStr = section.querySelector('.section-data').value;
+            
+            let data = {};
+            try {
+                if (dataStr) {
+                    data = JSON.parse(dataStr);
+                }
+            } catch (e) {
+                console.error('Error parsing section data:', e);
+            }
+            
+            updateSectionPreview(section, type, data);
+        });
+        
+        // Manually add event listeners for save button
+        document.getElementById('save-report-button').addEventListener('click', function() {
+            saveReport();
+        });
+        
+        // Run report button
+        document.getElementById('run-report-button').addEventListener('click', function() {
+            runReport();
+        });
+        
+        // Export report buttons
+        document.querySelectorAll('.export-report').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const format = this.getAttribute('data-format');
+                exportReport(format);
+            });
+        });
+        
+        // Initialize format options
+        updateFormatOptions();
+        
+        // Manually refresh preview
+        refreshPreview();
+    });
+</script>
+{% endblock %}

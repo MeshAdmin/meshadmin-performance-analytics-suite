@@ -1,0 +1,201 @@
+{% extends "layout.html" %}
+
+{% block title %}Flow Forwarder - NetFlow/sFlow Collector{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-exchange-alt me-2" style="color: #b30000;"></i>Flow Forwarder</h2>
+    
+    <div class="row">
+        <div class="col-md-5">
+            <!-- Add Forward Target Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Add Forward Target</h5>
+                </div>
+                <div class="card-body">
+                    <form id="forward-target-form" action="/add_forward_target" method="POST" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Target Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback">
+                                Please provide a target name.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="ip-address" class="form-label">IP Address</label>
+                            <input type="text" class="form-control" id="ip-address" name="ip_address" required
+                                   pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
+                            <div class="invalid-feedback">
+                                Please provide a valid IP address.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="port" class="form-label">Port</label>
+                            <input type="number" class="form-control" id="port" name="port" 
+                                   min="1" max="65535" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid port number (1-65535).
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="protocol" class="form-label">Protocol</label>
+                            <select class="form-select" id="protocol" name="protocol" required>
+                                <option value="udp" selected>UDP</option>
+                                <option value="tcp">TCP</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a protocol.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="flow-type" class="form-label">Flow Type</label>
+                            <select class="form-select" id="flow-type" name="flow_type" required>
+                                <option value="" disabled>Select Flow Type</option>
+                                <option value="netflow" selected>NetFlow</option>
+                                <option value="sflow">sFlow</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a flow type.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="flow-version" class="form-label">Version (Optional)</label>
+                            <select class="form-select" id="flow-version" name="flow_version">
+                                <option value="">All Versions</option>
+                                <option value="5">Version 5</option>
+                                <option value="9">Version 9</option>
+                                <option value="10">IPFIX (v10)</option>
+                            </select>
+                            <div class="form-text">Leave empty to forward all versions of the selected flow type</div>
+                        </div>
+                        
+                        <button type="submit" class="btn" style="background-color: #8B0000; color: #e0e0e0;">
+                            <i class="fas fa-plus me-1"></i>Add Target
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Forwarder Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Forwarder Statistics</h5>
+                </div>
+                <div class="card-body" id="forwarder-stats">
+                    <div class="spinner-border" role="status" style="color: #8B0000;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            <!-- Forward Targets -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Forward Targets</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>IP Address</th>
+                                    <th>Port</th>
+                                    <th>Protocol</th>
+                                    <th>Flow Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for target in targets %}
+                                    <tr>
+                                        <td>{{ target.name }}</td>
+                                        <td>{{ target.ip_address }}</td>
+                                        <td>{{ target.port }}</td>
+                                        <td>{{ target.protocol.upper() }}</td>
+                                        <td>
+                                            {{ target.flow_type }}
+                                            {% if target.flow_version %}
+                                                v{{ target.flow_version }}
+                                            {% else %}
+                                                (All)
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm toggle-target" 
+                                                    style="background-color: {% if target.active %}#8B0000{% else %}#444444{% endif %}; color: #e0e0e0;"
+                                                    data-target-id="{{ target.id }}">
+                                                {% if target.active %}
+                                                    <i class="fas fa-toggle-on"></i> Active
+                                                {% else %}
+                                                    <i class="fas fa-toggle-off"></i> Inactive
+                                                {% endif %}
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm" style="background-color: #8B0000; color: #e0e0e0;" onclick="deleteForwardTarget({{ target.id }})">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">No forward targets configured</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Forwarding Tips -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Forwarding Tips</h5>
+                </div>
+                <div class="card-body">
+                    <h6 style="color: #e0e0e0;">Forward Target Configuration</h6>
+                    <ul>
+                        <li>
+                            <strong style="color: #b30000;">Protocol Selection:</strong> UDP is recommended for most flow collectors. TCP provides reliability but with higher overhead.
+                        </li>
+                        <li>
+                            <strong style="color: #b30000;">Flow Type Filtering:</strong> You can filter which flow types are forwarded to each target.
+                        </li>
+                        <li>
+                            <strong style="color: #b30000;">Version Selection:</strong> Leave version empty to forward all versions of the selected flow type.
+                        </li>
+                        <li>
+                            <strong style="color: #b30000;">Target Status:</strong> Use the toggle button to enable/disable forwarding to specific targets without removing them.
+                        </li>
+                    </ul>
+                    
+                    <h6 style="color: #e0e0e0;">Performance Considerations</h6>
+                    <ul>
+                        <li>Adding too many forward targets can impact collector performance.</li>
+                        <li>High volume flow environments may require higher system resources when forwarding is enabled.</li>
+                        <li>Target collector availability is monitored, with automatic reconnection attempts for TCP targets.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts Container for JavaScript notifications -->
+    <div id="alerts-container"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/forwarder.js') }}"></script>
+{% endblock %}

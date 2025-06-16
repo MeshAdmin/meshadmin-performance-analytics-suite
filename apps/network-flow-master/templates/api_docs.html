@@ -1,0 +1,777 @@
+{% extends "layout.html" %}
+
+{% block title %}API Documentation - FlowVision{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-code me-2 icon-accent"></i>API Documentation</h2>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <!-- API Navigation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>API Endpoints</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#authentication" class="list-group-item list-group-item-action">Authentication</a>
+                    <a href="#flow-statistics" class="list-group-item list-group-item-action">Flow Statistics</a>
+                    <a href="#devices" class="list-group-item list-group-item-action">Devices</a>
+                    <a href="#device-details" class="list-group-item list-group-item-action">Device Details</a>
+                    <a href="#ai-insights" class="list-group-item list-group-item-action">AI Insights</a>
+                    <a href="#anomalies" class="list-group-item list-group-item-action">Anomaly Detection</a>
+                    <a href="#flow-simulation" class="list-group-item list-group-item-action">Flow Simulation</a>
+                    <a href="#flow-forwarding" class="list-group-item list-group-item-action">Flow Forwarding</a>
+                </div>
+            </div>
+            
+            <!-- API Key Management -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>API Key Management</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Your API key provides access to the FlowVision API. Keep it secure and do not share it with others.
+                    </p>
+                    <button id="generate-api-key" class="btn bg-accent w-100 mb-3">
+                        <i class="fas fa-key me-1"></i> Generate API Key
+                    </button>
+                    <div id="api-key-container" class="d-none mb-3">
+                        <div class="input-group">
+                            <input type="text" id="api-key" class="form-control" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copy-api-key">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted mt-1 d-block">
+                            This key will only be shown once. Please copy and store it securely.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- API Overview -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>API Overview</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        The FlowVision API provides programmatic access to your flow data, devices, and analytics.
+                        All API endpoints are accessible via HTTPS and return data in JSON format.
+                    </p>
+                    
+                    <h6 class="mt-4">Base URL</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>https://{{ request.host }}/api/v1</code></pre>
+                    
+                    <h6 class="mt-4">Authentication</h6>
+                    <p>
+                        All API requests require authentication. You can authenticate by including your API key in the request header:
+                    </p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>Authorization: Bearer YOUR_API_KEY</code></pre>
+                    
+                    <h6 class="mt-4">Rate Limiting</h6>
+                    <p>
+                        API requests are limited to 1000 requests per hour for each API key. If you exceed this limit,
+                        you will receive a 429 (Too Many Requests) response.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Authentication -->
+            <div class="card mb-4" id="authentication">
+                <div class="card-header">
+                    <h5>Authentication</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Generate API Token</h6>
+                    <p>
+                        Generates a new API token that can be used for authenticating API requests.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method post">POST</div>
+                        <div class="endpoint">/api/v1/auth/token</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Request Parameters</h6>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>username</td>
+                                <td>string</td>
+                                <td>Your FlowVision username</td>
+                            </tr>
+                            <tr>
+                                <td>password</td>
+                                <td>string</td>
+                                <td>Your FlowVision password</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_at": "2023-04-13T00:00:00Z"
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- Flow Statistics -->
+            <div class="card mb-4" id="flow-statistics">
+                <div class="card-header">
+                    <h5>Flow Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Get Flow Statistics</h6>
+                    <p>
+                        Returns flow statistics, including time series data, recent flows, and top statistics.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method get">GET</div>
+                        <div class="endpoint">/api/v1/flow_stats</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Query Parameters</h6>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>period</td>
+                                <td>string</td>
+                                <td>Time period for statistics (hour, day, week). Default: hour</td>
+                            </tr>
+                            <tr>
+                                <td>start_time</td>
+                                <td>string</td>
+                                <td>Start time (ISO 8601 format). Optional</td>
+                            </tr>
+                            <tr>
+                                <td>end_time</td>
+                                <td>string</td>
+                                <td>End time (ISO 8601 format). Optional</td>
+                            </tr>
+                            <tr>
+                                <td>device_id</td>
+                                <td>integer</td>
+                                <td>Filter by device ID. Optional</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "statistics": {
+    "total_flows": 12345,
+    "netflow_count": 10000,
+    "sflow_count": 2345,
+    "device_count": 5,
+    "top_source_ips": { "192.168.1.1": 1234, "10.0.0.1": 567 },
+    "top_destination_ips": { "8.8.8.8": 890, "1.1.1.1": 456 },
+    "protocol_distribution": { "6": 5678, "17": 2345 }
+  },
+  "time_series": {
+    "labels": ["12:00", "12:05", "12:10"],
+    "netflow": [120, 135, 140],
+    "sflow": [45, 50, 55]
+  },
+  "recent_flows": [
+    {
+      "id": 12345,
+      "timestamp": "2023-04-12T12:15:00Z",
+      "flow_type": "netflow5",
+      "src_ip": "192.168.1.1",
+      "src_port": 12345,
+      "dst_ip": "8.8.8.8",
+      "dst_port": 53,
+      "protocol": 17,
+      "bytes": 120,
+      "packets": 2
+    }
+  ],
+  "devices": [
+    {
+      "id": 1,
+      "name": "Router1",
+      "ip_address": "10.0.0.1",
+      "flow_type": "netflow",
+      "flow_version": 9,
+      "last_seen": "2023-04-12T12:15:00Z",
+      "statistics": {
+        "flow_count": 5678
+      }
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- Devices -->
+            <div class="card mb-4" id="devices">
+                <div class="card-header">
+                    <h5>Devices</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Get All Devices</h6>
+                    <p>
+                        Returns a list of all devices sending flow data.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method get">GET</div>
+                        <div class="endpoint">/api/v1/devices</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>[
+  {
+    "id": 1,
+    "name": "Router1",
+    "ip_address": "10.0.0.1",
+    "flow_type": "netflow",
+    "flow_version": 9,
+    "last_seen": "2023-04-12T12:15:00Z",
+    "statistics": {
+      "flow_count": 5678,
+      "bytes_today": 12345678,
+      "packets_today": 98765
+    }
+  },
+  {
+    "id": 2,
+    "name": "Switch1",
+    "ip_address": "10.0.0.2",
+    "flow_type": "sflow",
+    "flow_version": 5,
+    "last_seen": "2023-04-12T12:14:30Z",
+    "statistics": {
+      "flow_count": 1234,
+      "bytes_today": 5678901,
+      "packets_today": 45678
+    }
+  }
+]</code></pre>
+                </div>
+            </div>
+            
+            <!-- Device Details -->
+            <div class="card mb-4" id="device-details">
+                <div class="card-header">
+                    <h5>Device Details</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Get Device Details</h6>
+                    <p>
+                        Returns detailed information about a specific device.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method get">GET</div>
+                        <div class="endpoint">/api/v1/devices/{device_id}</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Path Parameters</h6>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>device_id</td>
+                                <td>integer</td>
+                                <td>The ID of the device</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "id": 1,
+  "name": "Router1",
+  "ip_address": "10.0.0.1",
+  "flow_type": "netflow",
+  "flow_version": 9,
+  "last_seen": "2023-04-12T12:15:00Z",
+  "vendor": "Cisco",
+  "model": "ISR 4321",
+  "os_version": "IOS-XE 17.3.1",
+  "up_since": "2023-03-15T00:00:00Z",
+  "flow_statistics": {
+    "total_flows": 123456,
+    "flows_per_minute": 85,
+    "bytes_per_second": 12345,
+    "packets_per_second": 678
+  },
+  "top_talkers": {
+    "sources": [
+      {"ip": "192.168.1.5", "flows": 1234, "bytes": 12345678},
+      {"ip": "192.168.1.10", "flows": 567, "bytes": 5678901}
+    ],
+    "destinations": [
+      {"ip": "8.8.8.8", "flows": 890, "bytes": 890123},
+      {"ip": "1.1.1.1", "flows": 456, "bytes": 456789}
+    ]
+  },
+  "protocol_distribution": {
+    "6": 5678,  // TCP
+    "17": 2345, // UDP
+    "1": 345    // ICMP
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- AI Insights -->
+            <div class="card mb-4" id="ai-insights">
+                <div class="card-header">
+                    <h5>AI Insights</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Get AI Insights for Device</h6>
+                    <p>
+                        Returns AI-powered insights for a specific device, including anomaly detection, traffic patterns, and behavior classification.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method get">GET</div>
+                        <div class="endpoint">/api/v1/ai_insights/{device_id}</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Path Parameters</h6>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>device_id</td>
+                                <td>integer</td>
+                                <td>The ID of the device</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h6 class="mt-3">Query Parameters</h6>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>period</td>
+                                <td>string</td>
+                                <td>Time period for insights (hour, day, week, month). Default: day</td>
+                            </tr>
+                            <tr>
+                                <td>start_time</td>
+                                <td>string</td>
+                                <td>Start time (ISO 8601 format). Optional</td>
+                            </tr>
+                            <tr>
+                                <td>end_time</td>
+                                <td>string</td>
+                                <td>End time (ISO 8601 format). Optional</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "device_id": 1,
+  "analysis_period": {
+    "start": "2023-04-11T12:00:00Z",
+    "end": "2023-04-12T12:00:00Z"
+  },
+  "anomalies": [
+    {
+      "id": 123,
+      "timestamp": "2023-04-12T10:15:00Z",
+      "anomaly_type": "Traffic Spike",
+      "src_ip": "192.168.1.5",
+      "dst_ip": "8.8.8.8",
+      "protocol": 17,
+      "description": "Sudden increase in DNS traffic",
+      "confidence": 0.92,
+      "severity": "medium"
+    }
+  ],
+  "traffic_patterns": {
+    "time_patterns": {
+      "hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+      "values": [10, 5, 3, 2, 2, 5, 15, 25, 45, 65, 70, 68, 72, 75, 70, 65, 60, 55, 50, 40, 35, 30, 25, 15]
+    },
+    "protocol_distribution": {
+      "TCP": 65,
+      "UDP": 25,
+      "ICMP": 5,
+      "Other": 5
+    },
+    "communication_patterns": {
+      "top_pairs": [
+        {
+          "src_ip": "192.168.1.5",
+          "dst_ip": "8.8.8.8",
+          "protocol": "UDP",
+          "ports": "53",
+          "flow_count": 890
+        },
+        {
+          "src_ip": "192.168.1.10",
+          "dst_ip": "1.1.1.1",
+          "protocol": "UDP",
+          "ports": "53",
+          "flow_count": 456
+        }
+      ]
+    }
+  },
+  "behavior": {
+    "classification": "Normal",
+    "description": "This device exhibits typical enterprise router behavior with regular DNS and web traffic patterns.",
+    "patterns": {
+      "dns_traffic": 0.8,
+      "web_traffic": 0.7,
+      "file_transfer": 0.2,
+      "email": 0.4,
+      "streaming": 0.1,
+      "unusual_ports": 0.05,
+      "scan_activity": 0.02
+    }
+  },
+  "recommendations": [
+    "Monitor DNS traffic from 192.168.1.5 due to detected anomalies",
+    "Consider implementing rate limiting for DNS requests",
+    "Traffic patterns suggest this is a primary gateway router for web access"
+  ]
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- Anomalies -->
+            <div class="card mb-4" id="anomalies">
+                <div class="card-header">
+                    <h5>Anomaly Detection</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Get Recent Anomalies</h6>
+                    <p>
+                        Returns recently detected anomalies across all devices.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method get">GET</div>
+                        <div class="endpoint">/api/v1/anomalies</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Query Parameters</h6>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>limit</td>
+                                <td>integer</td>
+                                <td>Maximum number of anomalies to return. Default: 10</td>
+                            </tr>
+                            <tr>
+                                <td>device_id</td>
+                                <td>integer</td>
+                                <td>Filter by device ID. Optional</td>
+                            </tr>
+                            <tr>
+                                <td>severity</td>
+                                <td>string</td>
+                                <td>Filter by severity (low, medium, high). Optional</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "count": 2,
+  "anomalies": [
+    {
+      "id": 123,
+      "device_id": 1,
+      "device_name": "Router1",
+      "timestamp": "2023-04-12T10:15:00Z",
+      "anomaly_type": "Traffic Spike",
+      "src_ip": "192.168.1.5",
+      "dst_ip": "8.8.8.8",
+      "protocol": 17,
+      "description": "Sudden increase in DNS traffic",
+      "confidence": 0.92,
+      "severity": "medium"
+    },
+    {
+      "id": 124,
+      "device_id": 2,
+      "device_name": "Switch1",
+      "timestamp": "2023-04-12T09:45:00Z",
+      "anomaly_type": "Port Scan",
+      "src_ip": "192.168.1.100",
+      "dst_ip": "192.168.1.1",
+      "protocol": 6,
+      "description": "Sequential connection attempts to multiple ports",
+      "confidence": 0.85,
+      "severity": "high"
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- Flow Simulation -->
+            <div class="card mb-4" id="flow-simulation">
+                <div class="card-header">
+                    <h5>Flow Simulation</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Start Flow Simulation</h6>
+                    <p>
+                        Starts a flow simulation with the specified parameters.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method post">POST</div>
+                        <div class="endpoint">/api/v1/simulations</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Request Body</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "template_id": 1,        // Optional: Pre-configured template ID
+  "flow_type": "netflow",  // Required: netflow or sflow
+  "flow_version": 9,       // Required: Flow version
+  "packets_per_second": 100, // Required: Packets per second
+  "duration": 60,          // Required: Duration in seconds
+  "custom_parameters": {   // Optional: Custom simulation parameters
+    "src_ip_range": "192.168.1.0/24",
+    "dst_ip_range": "10.0.0.0/24",
+    "protocols": [6, 17],
+    "port_range": [1, 65535]
+  }
+}</code></pre>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "simulation_id": 123,
+  "status": "running",
+  "start_time": "2023-04-12T12:30:00Z",
+  "end_time": "2023-04-12T12:31:00Z",
+  "flow_type": "netflow",
+  "flow_version": 9,
+  "packets_per_second": 100,
+  "duration": 60
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- Flow Forwarding -->
+            <div class="card mb-4" id="flow-forwarding">
+                <div class="card-header">
+                    <h5>Flow Forwarding</h5>
+                </div>
+                <div class="card-body">
+                    <h6>List Forward Targets</h6>
+                    <p>
+                        Returns a list of all flow forwarding targets.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method get">GET</div>
+                        <div class="endpoint">/api/v1/forward_targets</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>[
+  {
+    "id": 1,
+    "name": "Collector1",
+    "ip_address": "10.1.1.1",
+    "port": 2055,
+    "protocol": "udp",
+    "flow_type": "netflow",
+    "flow_version": 9,
+    "active": true,
+    "created_at": "2023-04-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Collector2",
+    "ip_address": "10.1.1.2",
+    "port": 6343,
+    "protocol": "udp",
+    "flow_type": "sflow",
+    "flow_version": 5,
+    "active": false,
+    "created_at": "2023-04-02T00:00:00Z"
+  }
+]</code></pre>
+                    
+                    <h6 class="mt-3">Add Forward Target</h6>
+                    <p>
+                        Creates a new flow forwarding target.
+                    </p>
+                    
+                    <div class="endpoint-details">
+                        <div class="method post">POST</div>
+                        <div class="endpoint">/api/v1/forward_targets</div>
+                    </div>
+                    
+                    <h6 class="mt-3">Request Body</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "name": "Collector3",
+  "ip_address": "10.1.1.3",
+  "port": 2055,
+  "protocol": "udp",
+  "flow_type": "netflow",
+  "flow_version": 9,
+  "active": true,
+  "filter": {  // Optional: Filter rules
+    "src_ip": "192.168.1.0/24",
+    "dst_ip": null,
+    "protocol": "6,17",
+    "min_bytes": 1000
+  }
+}</code></pre>
+                    
+                    <h6 class="mt-3">Response</h6>
+                    <pre class="bg-dark text-light p-3 rounded"><code>{
+  "id": 3,
+  "name": "Collector3",
+  "ip_address": "10.1.1.3",
+  "port": 2055,
+  "protocol": "udp",
+  "flow_type": "netflow",
+  "flow_version": 9,
+  "active": true,
+  "created_at": "2023-04-12T12:45:00Z"
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.endpoint-details {
+    display: flex;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.endpoint-details .method {
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 1rem;
+    min-width: 60px;
+    text-align: center;
+}
+
+.endpoint-details .method.get {
+    background-color: #61affe;
+    color: #fff;
+}
+
+.endpoint-details .method.post {
+    background-color: #49cc90;
+    color: #fff;
+}
+
+.endpoint-details .method.put {
+    background-color: #fca130;
+    color: #fff;
+}
+
+.endpoint-details .method.delete {
+    background-color: #f93e3e;
+    color: #fff;
+}
+
+.endpoint-details .endpoint {
+    font-family: monospace;
+    background-color: #f5f5f5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Generate API Key
+        const generateKeyBtn = document.getElementById('generate-api-key');
+        const apiKeyContainer = document.getElementById('api-key-container');
+        const apiKeyInput = document.getElementById('api-key');
+        const copyApiKeyBtn = document.getElementById('copy-api-key');
+        
+        generateKeyBtn.addEventListener('click', function() {
+            // In a real application, we would call an API to generate a key
+            // For demonstration, we'll generate a random string
+            const randomKey = 'fv_' + Math.random().toString(36).substring(2, 15) +
+                             Math.random().toString(36).substring(2, 15);
+            
+            apiKeyInput.value = randomKey;
+            apiKeyContainer.classList.remove('d-none');
+        });
+        
+        copyApiKeyBtn.addEventListener('click', function() {
+            apiKeyInput.select();
+            document.execCommand('copy');
+            
+            // Show copied notification
+            const originalHtml = copyApiKeyBtn.innerHTML;
+            copyApiKeyBtn.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(function() {
+                copyApiKeyBtn.innerHTML = originalHtml;
+            }, 2000);
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

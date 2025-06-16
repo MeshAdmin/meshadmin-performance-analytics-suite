@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Organizations - MASH{% endblock %}
+
+{% block page_title %}Organizations{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/customers.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-actions">
+        <h2>Organizations</h2>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="showCreateOrganizationModal()">
+                <i class="fas fa-plus"></i> New Organization
+            </button>
+        </div>
+    </div>
+    
+    {% if organizations %}
+    <div class="filter-bar">
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input type="text" id="org-search" placeholder="Search organizations..." oninput="filterOrganizations()">
+        </div>
+        <div class="filter-options">
+            <label>
+                <input type="checkbox" id="filter-msp" onchange="filterOrganizations()">
+                MSP Only
+            </label>
+        </div>
+        <div class="sort-options">
+            <label for="sort-orgs">Sort By:</label>
+            <select id="sort-orgs" class="form-control" onchange="sortOrganizations()">
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="created-desc">Newest First</option>
+                <option value="created-asc">Oldest First</option>
+            </select>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="content-card">
+    {% if organizations %}
+    <div class="table-responsive">
+        <table class="table" id="organizations-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Sites</th>
+                    <th>Devices</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for org in organizations %}
+                <tr data-org-id="{{ org.id }}" data-is-msp="{{ org.is_msp|lower }}">
+                    <td>{{ org.name }}</td>
+                    <td>
+                        {% if org.is_msp %}
+                        <span class="badge badge-primary">MSP</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Customer</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ org.sites|length }}</td>
+                    <td>
+                        {% set device_count = namespace(total=0) %}
+                        {% for site in org.sites %}
+                            {% set device_count.total = device_count.total + site.devices|length %}
+                        {% endfor %}
+                        {{ device_count.total }}
+                    </td>
+                    <td title="{{ org.created_at }}">{{ org.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('customers.organization_details', org_id=org.id) }}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-secondary" onclick="editOrganization({{ org.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-building"></i>
+        </div>
+        <h3>No Organizations</h3>
+        <p>You don't have any organizations yet. Create one to get started.</p>
+        <button class="btn btn-primary" onclick="showCreateOrganizationModal()">
+            <i class="fas fa-plus"></i> New Organization
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Create Organization Modal -->
+<div class="modal" id="organization-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Create Organization</h3>
+            <button class="modal-close" onclick="closeModal('organization-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="organization-form">
+                <input type="hidden" id="org-id" value="">
+                <div class="form-group">
+                    <label for="org-name">Organization Name</label>
+                    <input type="text" id="org-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="org-description">Description</label>
+                    <textarea id="org-description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="org-is-msp">
+                        This is an MSP organization
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('organization-modal')">Cancel</button>
+            <button class="btn btn-primary" id="save-org-btn" onclick="saveOrganization()">Create</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

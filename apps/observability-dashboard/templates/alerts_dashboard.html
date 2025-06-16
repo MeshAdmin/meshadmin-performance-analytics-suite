@@ -1,0 +1,826 @@
+{% extends 'base.html' %}
+
+{% block title %}Alerts Dashboard - MASH{% endblock %}
+
+{% block page_title %}Alerts Dashboard{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/alerts.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-actions">
+        <h2>Alerts Dashboard</h2>
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="refreshAlertDashboard()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <a href="{{ url_for('alerts.rules') }}" class="btn btn-primary">
+                <i class="fas fa-cog"></i> Manage Rules
+            </a>
+        </div>
+    </div>
+    
+    <div class="filter-bar">
+        <div class="filter-options">
+            <label>Time Range:</label>
+            <select id="alert-time-range" class="form-control" onchange="changeAlertTimeRange(this.value)">
+                <option value="24h" selected>Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="alert-summary-cards">
+    <div class="alert-summary-card">
+        <div class="summary-card-header">
+            <h3>Alert Summary</h3>
+        </div>
+        <div class="summary-card-body">
+            <div class="alert-stats">
+                <div class="alert-stat-item">
+                    <div class="stat-value" id="total-alerts-count">{{ alerts|length }}</div>
+                    <div class="stat-label">Total Alerts</div>
+                </div>
+                <div class="alert-stat-item">
+                    <div class="stat-value active-color" id="active-alerts-count">{{ alerts|selectattr('resolved', 'equalto', False)|selectattr('acknowledged', 'equalto', False)|list|length }}</div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="alert-stat-item">
+                    <div class="stat-value acknowledge-color" id="acknowledged-alerts-count">{{ alerts|selectattr('acknowledged', 'equalto', True)|selectattr('resolved', 'equalto', False)|list|length }}</div>
+                    <div class="stat-label">Acknowledged</div>
+                </div>
+                <div class="alert-stat-item">
+                    <div class="stat-value resolve-color" id="resolved-alerts-count">{{ alerts|selectattr('resolved', 'equalto', True)|list|length }}</div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+            </div>
+            
+            <div class="alert-stats-by-severity">
+                <div class="severity-stat">
+                    <div class="severity-label">
+                        <span class="badge badge-critical">Critical</span>
+                    </div>
+                    <div class="severity-bar-container">
+                        <div class="severity-bar critical-bar" style="width: {{ (alerts|selectattr('severity.value', 'equalto', 'critical')|list|length / alerts|length * 100) if alerts|length > 0 else 0 }}%"></div>
+                    </div>
+                    <div class="severity-count" id="critical-count">{{ alerts|selectattr('severity.value', 'equalto', 'critical')|list|length }}</div>
+                </div>
+                
+                <div class="severity-stat">
+                    <div class="severity-label">
+                        <span class="badge badge-error">Error</span>
+                    </div>
+                    <div class="severity-bar-container">
+                        <div class="severity-bar error-bar" style="width: {{ (alerts|selectattr('severity.value', 'equalto', 'error')|list|length / alerts|length * 100) if alerts|length > 0 else 0 }}%"></div>
+                    </div>
+                    <div class="severity-count" id="error-count">{{ alerts|selectattr('severity.value', 'equalto', 'error')|list|length }}</div>
+                </div>
+                
+                <div class="severity-stat">
+                    <div class="severity-label">
+                        <span class="badge badge-warning">Warning</span>
+                    </div>
+                    <div class="severity-bar-container">
+                        <div class="severity-bar warning-bar" style="width: {{ (alerts|selectattr('severity.value', 'equalto', 'warning')|list|length / alerts|length * 100) if alerts|length > 0 else 0 }}%"></div>
+                    </div>
+                    <div class="severity-count" id="warning-count">{{ alerts|selectattr('severity.value', 'equalto', 'warning')|list|length }}</div>
+                </div>
+                
+                <div class="severity-stat">
+                    <div class="severity-label">
+                        <span class="badge badge-info">Info</span>
+                    </div>
+                    <div class="severity-bar-container">
+                        <div class="severity-bar info-bar" style="width: {{ (alerts|selectattr('severity.value', 'equalto', 'info')|list|length / alerts|length * 100) if alerts|length > 0 else 0 }}%"></div>
+                    </div>
+                    <div class="severity-count" id="info-count">{{ alerts|selectattr('severity.value', 'equalto', 'info')|list|length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert-summary-card">
+        <div class="summary-card-header">
+            <h3>Alert Trends</h3>
+        </div>
+        <div class="summary-card-body">
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="alert-trend-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid mt-4">
+    <div class="content-card">
+        <div class="card-header">
+            <h3>Top Alert Sources</h3>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" style="height: 300px;">
+                <canvas id="alert-sources-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-card">
+        <div class="card-header">
+            <h3>Active Alert Rules</h3>
+        </div>
+        <div class="card-body">
+            {% if alert_rules %}
+            <div class="rule-stats">
+                <div class="rule-stat-item">
+                    <div class="stat-value">{{ alert_rules|length }}</div>
+                    <div class="stat-label">Total Rules</div>
+                </div>
+                <div class="rule-stat-item">
+                    <div class="stat-value">{{ alert_rules|selectattr('enabled', 'equalto', True)|list|length }}</div>
+                    <div class="stat-label">Enabled</div>
+                </div>
+                <div class="rule-stat-item">
+                    <div class="stat-value">{{ alert_rules|selectattr('enabled', 'equalto', True)|selectattr('alerts', 'defined')|selectattr('alerts', 'length', '>', 0)|list|length }}</div>
+                    <div class="stat-label">Triggered</div>
+                </div>
+            </div>
+            
+            <div class="rule-list">
+                {% for rule in alert_rules|selectattr('enabled', 'equalto', True)|sort(attribute='alerts')|reverse|slice(0, 5) %}
+                <div class="rule-item">
+                    <div class="rule-header">
+                        <div class="rule-name">{{ rule.name }}</div>
+                        <div class="rule-triggers">
+                            <span class="badge badge-{{ rule.severity.value }}">{{ rule.severity.value }}</span>
+                            <span class="alert-count">{{ rule.alerts|length }} alerts</span>
+                        </div>
+                    </div>
+                    <div class="rule-condition">{{ format_condition(rule.condition) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-bell-slash"></i>
+                </div>
+                <h3>No Alert Rules</h3>
+                <p>No alert rules have been configured yet.</p>
+                <a href="{{ url_for('alerts.rules') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Alert Rule
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="content-card mt-4">
+    <div class="card-header">
+        <h3>Recent Alerts</h3>
+        <a href="{{ url_for('alerts.history') }}" class="btn btn-sm btn-secondary">
+            View All
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_alerts %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Rule</th>
+                        <th>Message</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in recent_alerts %}
+                    <tr data-alert-id="{{ alert.id }}">
+                        <td>{{ alert.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ alert.alert_rule.name if alert.alert_rule else 'System' }}</td>
+                        <td>{{ alert.message }}</td>
+                        <td>
+                            <span class="badge badge-{{ alert.severity.value }}">{{ alert.severity.value }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if alert.resolved else 'warning' if alert.acknowledged else 'error' }}">
+                                {{ 'Resolved' if alert.resolved else 'Acknowledged' if alert.acknowledged else 'Active' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                {% if not alert.acknowledged and not alert.resolved %}
+                                <button class="btn btn-sm btn-secondary" onclick="acknowledgeAlert({{ alert.id }})">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                
+                                {% if not alert.resolved %}
+                                <button class="btn btn-sm btn-success" onclick="resolveAlert({{ alert.id }})">
+                                    <i class="fas fa-check-double"></i>
+                                </button>
+                                {% endif %}
+                                
+                                <button class="btn btn-sm btn-info" onclick="showAlertDetails({{ alert.id }})">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-bell-slash"></i>
+            </div>
+            <h3>No Recent Alerts</h3>
+            <p>There are no alerts in the selected time range.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Alert Details Modal (same as in alert_history.html) -->
+<div class="modal" id="alert-details-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Alert Details</h3>
+            <button class="modal-close" onclick="closeModal('alert-details-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="alert-details">
+                <div class="info-grid">
+                    <div class="info-group">
+                        <label>Alert ID</label>
+                        <div id="detail-alert-id"></div>
+                    </div>
+                    <div class="info-group">
+                        <label>Time</label>
+                        <div id="detail-alert-time"></div>
+                    </div>
+                    <div class="info-group">
+                        <label>Severity</label>
+                        <div id="detail-alert-severity"></div>
+                    </div>
+                    <div class="info-group">
+                        <label>Status</label>
+                        <div id="detail-alert-status"></div>
+                    </div>
+                    <div class="info-group span-full">
+                        <label>Rule</label>
+                        <div id="detail-alert-rule"></div>
+                    </div>
+                    <div class="info-group span-full">
+                        <label>Message</label>
+                        <div id="detail-alert-message"></div>
+                    </div>
+                    <div class="info-group span-full">
+                        <label>Details</label>
+                        <pre id="detail-alert-details" class="code-block"></pre>
+                    </div>
+                </div>
+                
+                <div class="alert-timeline mt-4">
+                    <h4>Alert Timeline</h4>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Alert Triggered</h5>
+                                <p id="timeline-trigger-time"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item" id="timeline-acknowledged" style="display: none;">
+                            <div class="timeline-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Alert Acknowledged</h5>
+                                <p id="timeline-ack-time"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item" id="timeline-resolved" style="display: none;">
+                            <div class="timeline-icon">
+                                <i class="fas fa-check-double"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Alert Resolved</h5>
+                                <p id="timeline-resolve-time"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <div id="alert-modal-actions">
+                <button class="btn btn-secondary" id="ack-btn-modal" onclick="acknowledgeAlertFromModal()">Acknowledge</button>
+                <button class="btn btn-success" id="resolve-btn-modal" onclick="resolveAlertFromModal()">Resolve</button>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModal('alert-details-modal')">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initAlertDashboard();
+    renderAlertTrendChart();
+    renderAlertSourcesChart();
+});
+
+let currentAlertDetails = null;
+
+function initAlertDashboard() {
+    // Initialize notification permissions
+    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        requestNotificationPermission();
+    }
+    
+    // Set up alert polling
+    setInterval(checkForNewAlerts, 30000); // Check every 30 seconds
+}
+
+function renderAlertTrendChart() {
+    const ctx = document.getElementById('alert-trend-chart').getContext('2d');
+    if (!ctx) return;
+    
+    // Get date range (last week by default)
+    const dates = [];
+    const now = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(now.getDate() - i);
+        dates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    }
+    
+    // Sample data - should be replaced with actual alert counts by severity
+    const criticalData = [2, 1, 3, 1, 0, 2, 1];
+    const errorData = [5, 4, 3, 6, 2, 3, 4];
+    const warningData = [8, 7, 9, 5, 6, 7, 8];
+    const infoData = [10, 12, 8, 9, 11, 10, 7];
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Critical',
+                    data: criticalData,
+                    backgroundColor: '#FF4136',
+                    stack: 'alerts'
+                },
+                {
+                    label: 'Error',
+                    data: errorData,
+                    backgroundColor: '#FF851B',
+                    stack: 'alerts'
+                },
+                {
+                    label: 'Warning',
+                    data: warningData,
+                    backgroundColor: '#FFDC00',
+                    stack: 'alerts'
+                },
+                {
+                    label: 'Info',
+                    data: infoData,
+                    backgroundColor: '#0074D9',
+                    stack: 'alerts'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#aaaaaa'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#aaaaaa',
+                        precision: 0
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#f0f0f0',
+                        boxWidth: 12,
+                        padding: 10
+                    }
+                },
+                tooltip: {
+                    mode: 'index'
+                }
+            }
+        }
+    });
+}
+
+function renderAlertSourcesChart() {
+    const ctx = document.getElementById('alert-sources-chart').getContext('2d');
+    if (!ctx) return;
+    
+    // Sample data - should be replaced with actual alert source counts
+    const labels = ['Syslog', 'SNMP', 'NetFlow', 'sFlow', 'Windows Events', 'OTEL'];
+    const data = [45, 15, 10, 8, 17, 5];
+    const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+        '#9966FF', '#FF9F40'
+    ];
+    
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 1,
+                borderColor: 'rgba(0, 0, 0, 0.2)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#f0f0f0',
+                        boxWidth: 12,
+                        padding: 10
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.formattedValue;
+                            const sum = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.raw / sum) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function refreshAlertDashboard() {
+    // Reload the page with the current time range
+    const timeRange = document.getElementById('alert-time-range').value;
+    window.location.href = `${window.location.pathname}?time_range=${timeRange}`;
+}
+
+function changeAlertTimeRange(range) {
+    // Reload the page with the new time range
+    window.location.href = `${window.location.pathname}?time_range=${range}`;
+}
+
+function showAlertDetails(alertId) {
+    const row = document.querySelector(`tr[data-alert-id="${alertId}"]`);
+    if (!row) return;
+    
+    // Get alert details from API
+    fetch(`/api/alerts/${alertId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch alert details');
+            return response.json();
+        })
+        .then(alert => {
+            currentAlertDetails = alert;
+            
+            // Populate modal with alert details
+            document.getElementById('detail-alert-id').textContent = alert.id;
+            document.getElementById('detail-alert-time').textContent = formatTimestamp(alert.timestamp);
+            
+            const severityEl = document.getElementById('detail-alert-severity');
+            severityEl.innerHTML = `<span class="badge badge-${alert.severity}">${alert.severity}</span>`;
+            
+            const statusEl = document.getElementById('detail-alert-status');
+            const status = alert.resolved ? 'Resolved' : alert.acknowledged ? 'Acknowledged' : 'Active';
+            const statusClass = alert.resolved ? 'success' : alert.acknowledged ? 'warning' : 'error';
+            statusEl.innerHTML = `<span class="badge badge-${statusClass}">${status}</span>`;
+            
+            document.getElementById('detail-alert-rule').textContent = alert.rule_name || 'System Alert';
+            document.getElementById('detail-alert-message').textContent = alert.message;
+            document.getElementById('detail-alert-details').textContent = alert.details || 'No additional details available';
+            
+            // Set timeline information
+            document.getElementById('timeline-trigger-time').textContent = formatTimestamp(alert.timestamp);
+            
+            const timelineAck = document.getElementById('timeline-acknowledged');
+            if (alert.acknowledged) {
+                timelineAck.style.display = 'flex';
+                document.getElementById('timeline-ack-time').textContent = formatTimestamp(alert.acknowledged_at);
+            } else {
+                timelineAck.style.display = 'none';
+            }
+            
+            const timelineResolved = document.getElementById('timeline-resolved');
+            if (alert.resolved) {
+                timelineResolved.style.display = 'flex';
+                document.getElementById('timeline-resolve-time').textContent = formatTimestamp(alert.resolved_at);
+            } else {
+                timelineResolved.style.display = 'none';
+            }
+            
+            // Configure action buttons
+            const actionsContainer = document.getElementById('alert-modal-actions');
+            if (alert.resolved) {
+                actionsContainer.style.display = 'none';
+            } else {
+                actionsContainer.style.display = 'flex';
+                
+                const ackButton = document.getElementById('ack-btn-modal');
+                if (alert.acknowledged) {
+                    ackButton.style.display = 'none';
+                } else {
+                    ackButton.style.display = 'inline-block';
+                }
+            }
+            
+            // Show the modal
+            showModal('alert-details-modal');
+        })
+        .catch(error => {
+            console.error('Error fetching alert details:', error);
+            showNotification('Error fetching alert details', 'error');
+        });
+}
+
+function acknowledgeAlertFromModal() {
+    if (!currentAlertDetails) return;
+    
+    acknowledgeAlert(currentAlertDetails.id, () => {
+        // Update the modal to reflect the acknowledged state
+        const statusEl = document.getElementById('detail-alert-status');
+        statusEl.innerHTML = `<span class="badge badge-warning">Acknowledged</span>`;
+        
+        const timelineAck = document.getElementById('timeline-acknowledged');
+        timelineAck.style.display = 'flex';
+        document.getElementById('timeline-ack-time').textContent = formatTimestamp(new Date());
+        
+        const ackButton = document.getElementById('ack-btn-modal');
+        ackButton.style.display = 'none';
+        
+        // Update the currentAlertDetails
+        currentAlertDetails.acknowledged = true;
+        currentAlertDetails.acknowledged_at = new Date().toISOString();
+    });
+}
+
+function resolveAlertFromModal() {
+    if (!currentAlertDetails) return;
+    
+    resolveAlert(currentAlertDetails.id, () => {
+        // Update the modal to reflect the resolved state
+        const statusEl = document.getElementById('detail-alert-status');
+        statusEl.innerHTML = `<span class="badge badge-success">Resolved</span>`;
+        
+        const timelineResolved = document.getElementById('timeline-resolved');
+        timelineResolved.style.display = 'flex';
+        document.getElementById('timeline-resolve-time').textContent = formatTimestamp(new Date());
+        
+        const actionsContainer = document.getElementById('alert-modal-actions');
+        actionsContainer.style.display = 'none';
+        
+        // Update the currentAlertDetails
+        currentAlertDetails.resolved = true;
+        currentAlertDetails.resolved_at = new Date().toISOString();
+    });
+}
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+}
+
+function acknowledgeAlert(alertId, callback) {
+    if (!alertId) return;
+    
+    // Send request to acknowledge the alert
+    fetch(`/api/alerts/${alertId}/acknowledge`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to acknowledge alert');
+        }
+        
+        // Find the alert in the table and update its status
+        const row = document.querySelector(`tr[data-alert-id="${alertId}"]`);
+        if (row) {
+            const statusCell = row.querySelector('td:nth-child(5)');
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="badge badge-warning">Acknowledged</span>';
+            }
+            
+            // Update action buttons
+            const actionsCell = row.querySelector('td:nth-child(6)');
+            if (actionsCell) {
+                const ackButton = actionsCell.querySelector('button[onclick^="acknowledgeAlert"]');
+                if (ackButton) {
+                    ackButton.style.display = 'none';
+                }
+            }
+        }
+        
+        // Update alert counters
+        updateAlertCounters();
+        
+        // Execute callback if provided
+        if (typeof callback === 'function') {
+            callback();
+        }
+        
+        // Show notification
+        showNotification('Alert acknowledged successfully', 'success');
+    })
+    .catch(error => {
+        console.error('Error acknowledging alert:', error);
+        showNotification('Failed to acknowledge alert', 'error');
+    });
+}
+
+function resolveAlert(alertId, callback) {
+    if (!alertId) return;
+    
+    // Send request to resolve the alert
+    fetch(`/api/alerts/${alertId}/resolve`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to resolve alert');
+        }
+        
+        // Find the alert in the table and update its status
+        const row = document.querySelector(`tr[data-alert-id="${alertId}"]`);
+        if (row) {
+            const statusCell = row.querySelector('td:nth-child(5)');
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="badge badge-success">Resolved</span>';
+            }
+            
+            // Update action buttons
+            const actionsCell = row.querySelector('td:nth-child(6)');
+            if (actionsCell) {
+                const ackButton = actionsCell.querySelector('button[onclick^="acknowledgeAlert"]');
+                const resolveButton = actionsCell.querySelector('button[onclick^="resolveAlert"]');
+                
+                if (ackButton) {
+                    ackButton.style.display = 'none';
+                }
+                
+                if (resolveButton) {
+                    resolveButton.style.display = 'none';
+                }
+            }
+        }
+        
+        // Update alert counters
+        updateAlertCounters();
+        
+        // Execute callback if provided
+        if (typeof callback === 'function') {
+            callback();
+        }
+        
+        // Show notification
+        showNotification('Alert resolved successfully', 'success');
+    })
+    .catch(error => {
+        console.error('Error resolving alert:', error);
+        showNotification('Failed to resolve alert', 'error');
+    });
+}
+
+function updateAlertCounters() {
+    // Refresh alert counters via API
+    fetch('/api/alerts/summary')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('total-alerts-count').innerText = data.total || 0;
+        document.getElementById('active-alerts-count').innerText = data.active || 0;
+        document.getElementById('acknowledged-alerts-count').innerText = data.acknowledged || 0;
+        document.getElementById('resolved-alerts-count').innerText = data.resolved || 0;
+        
+        document.getElementById('critical-count').innerText = data.critical || 0;
+        document.getElementById('error-count').innerText = data.error || 0;
+        document.getElementById('warning-count').innerText = data.warning || 0;
+        document.getElementById('info-count').innerText = data.info || 0;
+    })
+    .catch(error => {
+        console.error('Error fetching alert summary:', error);
+    });
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
+function showNotification(message, type = 'info') {
+    // Check if notifications container exists, if not create it
+    let container = document.getElementById('notifications-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notifications-container';
+        document.body.appendChild(container);
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-icon">
+            <i class="fas ${getNotificationIcon(type)}"></i>
+        </div>
+        <div class="notification-content">
+            <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close">&times;</button>
+    `;
+    
+    // Add to container
+    container.appendChild(notification);
+    
+    // Setup auto-dismiss
+    setTimeout(() => {
+        notification.classList.add('notification-hide');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 5000);
+    
+    // Add event listener for close button
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            notification.classList.add('notification-hide');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        });
+    }
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success': return 'fa-check-circle';
+        case 'error': return 'fa-times-circle';
+        case 'warning': return 'fa-exclamation-triangle';
+        default: return 'fa-info-circle';
+    }
+}
+
+function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('This browser does not support desktop notifications');
+        return;
+    }
+    
+    Notification.requestPermission();
+}
+</script>
+{% endblock %}

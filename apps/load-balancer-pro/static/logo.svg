@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <style>
+    .logo-text { font: bold 24px sans-serif; fill: #333; }
+    .main-circle { fill: #1f77b4; }
+    .backend-circle { fill: #2ca02c; }
+    .connection-line { stroke: #7f7f7f; stroke-width: 2; stroke-dasharray: 5,5; }
+    .arrow { fill: #d62728; }
+  </style>
+  
+  <!-- Main load balancer circle -->
+  <circle cx="100" cy="100" r="40" class="main-circle" />
+  
+  <!-- Backend servers -->
+  <circle cx="50" cy="170" r="20" class="backend-circle" />
+  <circle cx="100" cy="170" r="20" class="backend-circle" />
+  <circle cx="150" cy="170" r="20" class="backend-circle" />
+  
+  <!-- Connection lines -->
+  <line x1="100" y1="100" x2="50" y2="170" class="connection-line" />
+  <line x1="100" y1="100" x2="100" y2="170" class="connection-line" />
+  <line x1="100" y1="100" x2="150" y2="170" class="connection-line" />
+  
+  <!-- Incoming arrows -->
+  <polygon points="100,45 90,65 110,65" class="arrow" />
+  <polygon points="70,70 60,85 80,85" class="arrow" />
+  <polygon points="130,70 120,85 140,85" class="arrow" />
+  
+  <!-- Labels -->
+  <text x="100" y="105" text-anchor="middle" class="logo-text">LB</text>
+  <text x="50" y="175" text-anchor="middle" class="logo-text" style="font-size: 16px;">B1</text>
+  <text x="100" y="175" text-anchor="middle" class="logo-text" style="font-size: 16px;">B2</text>
+  <text x="150" y="175" text-anchor="middle" class="logo-text" style="font-size: 16px;">B3</text>
+</svg>

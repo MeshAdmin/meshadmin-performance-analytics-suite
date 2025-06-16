@@ -1,0 +1,712 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Observability Dashboard{% endblock %}
+
+{% block page_title %}Reports{% endblock %}
+
+{% block head_extra %}
+<!-- Additional CSS for reports page -->
+<style>
+    .reports-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .report-filters {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .report-card {
+        margin-bottom: 20px;
+    }
+    
+    .report-card .card-body {
+        padding: 15px;
+    }
+    
+    .report-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .report-meta {
+        font-size: 0.85rem;
+        color: var(--secondary-text);
+        margin-top: 8px;
+    }
+    
+    .report-schedule-badge {
+        background-color: var(--secondary-bg);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        margin-right: 8px;
+    }
+    
+    .tabs {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .tab {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .tab.active {
+        border-bottom-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .report-runs-table th,
+    .report-runs-table td {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="tabs">
+    <div class="tab active" data-tab="reports">Reports</div>
+    <div class="tab" data-tab="scheduled">Scheduled Reports</div>
+    <div class="tab" data-tab="history">Report History</div>
+</div>
+
+<!-- Reports Tab -->
+<div id="reports-tab" class="tab-content active">
+    <div class="reports-toolbar">
+        <div class="report-filters">
+            <div class="search-container">
+                <input type="text" id="report-search" class="form-control" placeholder="Search reports...">
+            </div>
+            
+            <select id="report-filter" class="form-control">
+                <option value="all">All Reports</option>
+                <option value="my">My Reports</option>
+                <option value="shared">Shared Reports</option>
+            </select>
+        </div>
+        
+        <div class="reports-actions">
+            <a href="{{ url_for('reports.create') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Create Report
+            </a>
+        </div>
+    </div>
+    
+    <!-- Reports List -->
+    <div class="reports-list">
+        {% if reports %}
+            {% for report in reports %}
+            <div class="card report-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h3 class="card-title">{{ report.name }}</h3>
+                        <div class="report-actions">
+                            <a href="{{ url_for('reports.run', report_id=report.id) }}" class="btn btn-sm btn-primary">Run</a>
+                            <a href="{{ url_for('reports.edit', report_id=report.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                            <button class="btn btn-sm btn-danger delete-report" data-report-id="{{ report.id }}">Delete</button>
+                        </div>
+                    </div>
+                    
+                    <p class="card-text">{{ report.description or 'No description provided.' }}</p>
+                    
+                    <div class="report-meta">
+                        {% if report.schedule %}
+                        <span class="report-schedule-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            {{ report.schedule }}
+                        </span>
+                        {% endif %}
+                        
+                        <span class="report-format">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            {{ report.format.upper() }}
+                        </span>
+                        
+                        <span class="report-creator">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            {{ report.user.username }}
+                        </span>
+                        
+                        <span class="report-updated">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Updated {{ report.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state card">
+                <div class="card-body text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <h3 class="mt-3">No reports yet</h3>
+                    <p class="text-secondary">Create reports to analyze your network data</p>
+                    <a href="{{ url_for('reports.create') }}" class="btn btn-primary mt-2">Create Your First Report</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Scheduled Reports Tab -->
+<div id="scheduled-tab" class="tab-content">
+    <div class="reports-toolbar">
+        <div class="report-filters">
+            <select id="schedule-filter" class="form-control">
+                <option value="all">All Schedules</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Scheduled Reports Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Report Name</th>
+                        <th>Schedule</th>
+                        <th>Recipients</th>
+                        <th>Last Run</th>
+                        <th>Next Run</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if scheduled_reports %}
+                        {% for report in scheduled_reports %}
+                        <tr>
+                            <td>{{ report.name }}</td>
+                            <td>{{ report.schedule }}</td>
+                            <td>{{ report.recipients|join(', ') if report.recipients else 'None' }}</td>
+                            <td>{{ report.last_run.strftime('%Y-%m-%d %H:%M') if report.last_run else 'Never' }}</td>
+                            <td>{{ report.next_run.strftime('%Y-%m-%d %H:%M') if report.next_run else 'Unknown' }}</td>
+                            <td>
+                                {% if report.enabled %}
+                                <span class="badge badge-success">Active</span>
+                                {% else %}
+                                <span class="badge badge-secondary">Paused</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="report-actions">
+                                    <button class="btn btn-sm btn-primary run-now" data-report-id="{{ report.id }}">Run Now</button>
+                                    <button class="btn btn-sm btn-secondary toggle-schedule" data-report-id="{{ report.id }}" data-enabled="{{ report.enabled }}">
+                                        {{ 'Pause' if report.enabled else 'Resume' }}
+                                    </button>
+                                    <a href="{{ url_for('reports.edit', report_id=report.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No scheduled reports</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Report History Tab -->
+<div id="history-tab" class="tab-content">
+    <div class="reports-toolbar">
+        <div class="report-filters">
+            <select id="history-filter" class="form-control">
+                <option value="all">All Reports</option>
+                <option value="completed">Completed</option>
+                <option value="error">Failed</option>
+                <option value="running">Running</option>
+            </select>
+            
+            <input type="date" id="history-date" class="form-control" value="{{ today }}" max="{{ today }}">
+        </div>
+    </div>
+    
+    <!-- Report History Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table report-runs-table">
+                <thead>
+                    <tr>
+                        <th>Report Name</th>
+                        <th>Started</th>
+                        <th>Completed</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>User</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if report_runs %}
+                        {% for run in report_runs %}
+                        <tr>
+                            <td>{{ run.report.name }}</td>
+                            <td>{{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ run.completed_at.strftime('%Y-%m-%d %H:%M:%S') if run.completed_at else '-' }}</td>
+                            <td>{{ (run.completed_at - run.started_at).total_seconds()|int if run.completed_at else '-' }}s</td>
+                            <td>
+                                {% if run.status == 'completed' %}
+                                <span class="badge badge-success">Completed</span>
+                                {% elif run.status == 'running' %}
+                                <span class="badge badge-info">Running</span>
+                                {% elif run.status == 'pending' %}
+                                <span class="badge badge-secondary">Pending</span>
+                                {% else %}
+                                <span class="badge badge-error">Error</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ run.report.user.username }}</td>
+                            <td>
+                                <div class="report-actions">
+                                    {% if run.status == 'completed' and run.file_path %}
+                                    <a href="{{ url_for('reports.download', run_id=run.id) }}" class="btn btn-sm btn-primary">Download</a>
+                                    {% endif %}
+                                    {% if run.status == 'error' %}
+                                    <button class="btn btn-sm btn-secondary view-error" data-run-id="{{ run.id }}">View Error</button>
+                                    {% endif %}
+                                    {% if run.status != 'running' and run.status != 'pending' %}
+                                    <button class="btn btn-sm btn-danger delete-run" data-run-id="{{ run.id }}">Delete</button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No report history for the selected period</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab handling
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === `${tabId}-tab`) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        // Report search functionality
+        const searchInput = document.getElementById('report-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', filterReports);
+        }
+        
+        // Report filter functionality
+        const reportFilter = document.getElementById('report-filter');
+        if (reportFilter) {
+            reportFilter.addEventListener('change', filterReports);
+        }
+        
+        // Schedule filter functionality
+        const scheduleFilter = document.getElementById('schedule-filter');
+        if (scheduleFilter) {
+            scheduleFilter.addEventListener('change', filterScheduledReports);
+        }
+        
+        // History filter functionality
+        const historyFilter = document.getElementById('history-filter');
+        const historyDate = document.getElementById('history-date');
+        
+        if (historyFilter) {
+            historyFilter.addEventListener('change', filterReportHistory);
+        }
+        
+        if (historyDate) {
+            historyDate.addEventListener('change', filterReportHistory);
+        }
+        
+        // Delete report button handlers
+        document.querySelectorAll('.delete-report').forEach(button => {
+            button.addEventListener('click', function() {
+                const reportId = this.getAttribute('data-report-id');
+                deleteReport(reportId);
+            });
+        });
+        
+        // Toggle schedule button handlers
+        document.querySelectorAll('.toggle-schedule').forEach(button => {
+            button.addEventListener('click', function() {
+                const reportId = this.getAttribute('data-report-id');
+                const enabled = this.getAttribute('data-enabled') === 'True';
+                toggleReportSchedule(reportId, !enabled);
+            });
+        });
+        
+        // Run now button handlers
+        document.querySelectorAll('.run-now').forEach(button => {
+            button.addEventListener('click', function() {
+                const reportId = this.getAttribute('data-report-id');
+                runReportNow(reportId);
+            });
+        });
+        
+        // Delete run button handlers
+        document.querySelectorAll('.delete-run').forEach(button => {
+            button.addEventListener('click', function() {
+                const runId = this.getAttribute('data-run-id');
+                deleteReportRun(runId);
+            });
+        });
+        
+        // View error button handlers
+        document.querySelectorAll('.view-error').forEach(button => {
+            button.addEventListener('click', function() {
+                const runId = this.getAttribute('data-run-id');
+                viewRunError(runId);
+            });
+        });
+        
+        // Filter reports function
+        function filterReports() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filterType = reportFilter.value;
+            
+            document.querySelectorAll('.report-card').forEach(report => {
+                const title = report.querySelector('.card-title').textContent.toLowerCase();
+                const description = report.querySelector('.card-text').textContent.toLowerCase();
+                const creator = report.querySelector('.report-creator').textContent.toLowerCase();
+                
+                // Filter by search term
+                const matchesSearch = title.includes(searchTerm) || 
+                                    description.includes(searchTerm) || 
+                                    creator.includes(searchTerm);
+                
+                // Filter by type
+                let matchesType = true;
+                if (filterType === 'my') {
+                    matchesType = creator.includes('{{ current_user.username }}'.toLowerCase());
+                } else if (filterType === 'shared') {
+                    matchesType = !creator.includes('{{ current_user.username }}'.toLowerCase());
+                }
+                
+                // Show/hide report
+                report.style.display = matchesSearch && matchesType ? 'block' : 'none';
+            });
+        }
+        
+        // Filter scheduled reports function
+        function filterScheduledReports() {
+            const filterType = scheduleFilter.value;
+            
+            document.querySelectorAll('#scheduled-tab tbody tr').forEach(row => {
+                if (row.querySelector('td').colSpan) return; // Skip empty message row
+                
+                const scheduleText = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                
+                if (filterType === 'all') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = scheduleText.includes(filterType) ? '' : 'none';
+                }
+            });
+        }
+        
+        // Filter report history function
+        function filterReportHistory() {
+            const filterType = historyFilter.value;
+            const filterDate = historyDate.value;
+            
+            document.querySelectorAll('#history-tab tbody tr').forEach(row => {
+                if (row.querySelector('td').colSpan) return; // Skip empty message row
+                
+                const statusElement = row.querySelector('td:nth-child(5) .badge');
+                const status = statusElement.textContent.toLowerCase();
+                const date = row.querySelector('td:nth-child(2)').textContent.split(' ')[0]; // Extract date part
+                
+                let matchesStatus = true;
+                if (filterType !== 'all') {
+                    matchesStatus = status.includes(filterType);
+                }
+                
+                const matchesDate = date === filterDate;
+                
+                row.style.display = matchesStatus && matchesDate ? '' : 'none';
+            });
+        }
+        
+        // Delete report function
+        function deleteReport(reportId) {
+            if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                fetch(`/api/reports/${reportId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete report');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Remove report card from the UI
+                    const reportCard = document.querySelector(`.delete-report[data-report-id="${reportId}"]`).closest('.report-card');
+                    reportCard.remove();
+                    
+                    // Show success message
+                    showNotification('Report deleted successfully', 'success');
+                })
+                .catch(error => {
+                    console.error('Error deleting report:', error);
+                    showNotification('Error deleting report', 'error');
+                });
+            }
+        }
+        
+        // Toggle report schedule function
+        function toggleReportSchedule(reportId, enable) {
+            fetch(`/api/reports/${reportId}/schedule`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled: enable }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update schedule');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update the button text and data attribute
+                const button = document.querySelector(`.toggle-schedule[data-report-id="${reportId}"]`);
+                button.textContent = enable ? 'Pause' : 'Resume';
+                button.setAttribute('data-enabled', enable.toString());
+                
+                // Update the status badge
+                const statusBadge = button.closest('tr').querySelector('td:nth-child(6) .badge');
+                statusBadge.className = enable ? 'badge badge-success' : 'badge badge-secondary';
+                statusBadge.textContent = enable ? 'Active' : 'Paused';
+                
+                // Show success message
+                showNotification(`Report schedule ${enable ? 'activated' : 'paused'}`, 'success');
+            })
+            .catch(error => {
+                console.error('Error updating schedule:', error);
+                showNotification('Error updating schedule', 'error');
+            });
+        }
+        
+        // Run report now function
+        function runReportNow(reportId) {
+            fetch(`/api/reports/${reportId}/run`, {
+                method: 'POST',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to run report');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showNotification('Report execution started', 'success');
+                
+                // Redirect to the report run page if runId is provided
+                if (data.runId) {
+                    window.location.href = `/reports/run/${data.runId}`;
+                }
+            })
+            .catch(error => {
+                console.error('Error running report:', error);
+                showNotification('Error running report', 'error');
+            });
+        }
+        
+        // Delete report run function
+        function deleteReportRun(runId) {
+            if (confirm('Are you sure you want to delete this report run? This will also delete any generated files.')) {
+                fetch(`/api/reports/runs/${runId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete report run');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Remove row from the table
+                    const runRow = document.querySelector(`.delete-run[data-run-id="${runId}"]`).closest('tr');
+                    runRow.remove();
+                    
+                    // Show success message
+                    showNotification('Report run deleted successfully', 'success');
+                })
+                .catch(error => {
+                    console.error('Error deleting report run:', error);
+                    showNotification('Error deleting report run', 'error');
+                });
+            }
+        }
+        
+        // View run error function
+        function viewRunError(runId) {
+            fetch(`/api/reports/runs/${runId}/error`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch error details');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Create and show modal with error details
+                    const modal = document.createElement('div');
+                    modal.className = 'modal fade-in';
+                    modal.innerHTML = `
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Error Details</h2>
+                                <button class="close-modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <h3>Report: ${data.report_name}</h3>
+                                <p><strong>Run ID:</strong> ${data.run_id}</p>
+                                <p><strong>Date:</strong> ${data.date}</p>
+                                <div class="error-message">
+                                    <h4>Error Message:</h4>
+                                    <pre>${data.error_message}</pre>
+                                </div>
+                                <div class="form-group mt-4">
+                                    <button type="button" class="btn btn-primary retry-report" data-report-id="${data.report_id}">Retry Report</button>
+                                    <button type="button" class="btn btn-secondary close-modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(modal);
+                    
+                    // Add close button event listener
+                    modal.querySelectorAll('.close-modal').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            modal.remove();
+                        });
+                    });
+                    
+                    // Add retry button event listener
+                    modal.querySelector('.retry-report').addEventListener('click', () => {
+                        runReportNow(data.report_id);
+                        modal.remove();
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching run error details:', error);
+                    showNotification('Error fetching error details', 'error');
+                });
+        }
+        
+        // Helper function to show notifications
+        function showNotification(message, type) {
+            // Check if notification container exists
+            let container = document.querySelector('.notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'notification-container';
+                container.style.position = 'fixed';
+                container.style.top = '20px';
+                container.style.right = '20px';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+            
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} fade-in`;
+            notification.innerHTML = `
+                ${message}
+                <button class="close-alert">&times;</button>
+            `;
+            
+            // Add notification to container
+            container.appendChild(notification);
+            
+            // Add close button event listener
+            notification.querySelector('.close-alert').addEventListener('click', () => {
+                notification.remove();
+            });
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

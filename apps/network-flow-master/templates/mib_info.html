@@ -1,0 +1,151 @@
+{% extends "layout.html" %}
+
+{% block title %}MIB Information - {{ mib_file.filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-file-code me-2 icon-accent"></i>MIB Information</h2>
+        <a href="{{ url_for('mib_manager') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to MIB Manager
+        </a>
+    </div>
+    
+    <!-- MIB File Details -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>MIB File Details: {{ mib_file.filename }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <th style="width: 140px;">Module Name:</th>
+                            <td>{{ mib_info.module_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Device Type:</th>
+                            <td>{{ mib_file.device_type or 'Unknown' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge" style="background-color: {% if mib_file.parsed %}#8B0000{% else %}#666600{% endif %};">
+                                    {% if mib_file.parsed %}Parsed{% else %}Not Parsed{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <th style="width: 140px;">Upload Date:</th>
+                            <td>{{ mib_file.upload_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        <tr>
+                            <th>File Path:</th>
+                            <td><small>{{ mib_file.path }}</small></td>
+                        </tr>
+                        <tr>
+                            <th>Description:</th>
+                            <td>{{ mib_file.description or 'No description provided' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Object Identifiers (OIDs) -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="fas fa-sitemap me-2 icon-accent"></i>Object Identifiers (OIDs)</h5>
+            <span class="badge bg-secondary">{{ mib_info.oids|length }} OIDs</span>
+        </div>
+        <div class="card-body">
+            {% if mib_info.oids %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>OID</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, info in mib_info.oids.items() %}
+                                <tr>
+                                    <td>{{ name }}</td>
+                                    <td><code>{{ info.oid }}</code></td>
+                                    <td>{{ info.type }}</td>
+                                    <td>{{ info.description|truncate(100) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary">
+                    No OIDs found in this MIB file.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Tables -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="fas fa-table me-2 icon-accent"></i>Tables</h5>
+            <span class="badge bg-secondary">{{ mib_info.tables|length }} Tables</span>
+        </div>
+        <div class="card-body">
+            {% if mib_info.tables %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>OID</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, info in mib_info.tables.items() %}
+                                <tr>
+                                    <td>{{ name }}</td>
+                                    <td><code>{{ info.oid }}</code></td>
+                                    <td>{{ info.description|truncate(100) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary">
+                    No tables found in this MIB file.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Device Suitability -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-server me-2 icon-accent"></i>Device Information</h5>
+        </div>
+        <div class="card-body">
+            <p>
+                For more detailed information about the device and its flow capabilities based on this MIB file, 
+                please click the button below:
+            </p>
+            <a href="{{ url_for('device_info', mib_id=mib_file.id) }}" class="btn btn-lg" style="background-color: #4B0082; color: #e0e0e0;">
+                <i class="fas fa-server me-1"></i> View Device Information
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

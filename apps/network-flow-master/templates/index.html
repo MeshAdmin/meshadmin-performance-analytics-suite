@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+
+{% block title %}FlowVision - NetFlow/sFlow Collector{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <i class="fas fa-network-wired me-2"></i> Welcome to FlowVision
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h2>High-Performance NetFlow/sFlow Collector, Aggregator, and Analyzer</h2>
+        <p>
+            FlowVision is a powerful platform for collecting, processing, and analyzing NetFlow and sFlow 
+            data from your network devices. With intelligent AI-powered insights, it helps you understand 
+            your network traffic patterns, detect anomalies, and make informed decisions.
+        </p>
+        <div class="text-center my-4">
+            <a href="/dashboard" class="btn btn-primary">
+                <i class="fas fa-tachometer-alt me-2"></i> Go to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Key Features -->
+<div class="row mt-4">
+    <div class="col-md-4 mb-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <h3 class="feature-title">Multi-Format Collection</h3>
+            <p class="feature-description">
+                Auto-detect and collect NetFlow v5, v9, IPFIX, and sFlow v4, v5 from multiple sources simultaneously.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <h3 class="feature-title">Intelligent Forwarding</h3>
+            <p class="feature-description">
+                Forward collected flows to multiple destinations with version translation and filtering capabilities.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h3 class="feature-title">AI-Powered Analysis</h3>
+            <p class="feature-description">
+                Detect anomalies, analyze traffic patterns, and gain insights with machine learning algorithms.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <h3 class="feature-title">Flow Simulation</h3>
+            <p class="feature-description">
+                Generate realistic NetFlow and sFlow traffic for testing, training, and demonstration purposes.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="feature-title">Interactive Visualization</h3>
+            <p class="feature-description">
+                Visualize your network traffic with powerful, interactive charts and filtering options.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <h3 class="feature-title">MIB-Based Analysis</h3>
+            <p class="feature-description">
+                Upload device-specific MIB files for enhanced analysis and device capability detection.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

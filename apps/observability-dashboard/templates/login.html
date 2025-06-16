@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Login - MASH | MeshAdmin System Heuristics{% endblock %}
+
+{% block page_title %}Login{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="card auth-card">
+        <div class="card-header">
+            <h2 class="card-title">Login to Your Account</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                {{ form.csrf_token }}
+                
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    {{ form.username(class="form-control", placeholder="Your username", id="username") }}
+                    {% if form.username.errors %}
+                    <div class="form-error">{{ form.username.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    {{ form.password(class="form-control", placeholder="Your password", id="password") }}
+                    {% if form.password.errors %}
+                    <div class="form-error">{{ form.password.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.remember(class="form-check-input", id="remember") }}
+                        <label for="remember" class="form-check-label">Remember me</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </div>
+            </form>
+            
+            <div class="auth-links">
+                <a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a>
+                <span class="auth-separator">|</span>
+                <a href="{{ url_for('auth.register') }}">Create account</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="auth-footer">
+        <div class="company-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 9.5V4a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v5.5"></path>
+                <path d="M2 14.5v5.5a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-5.5"></path>
+                <rect x="2" y="9.5" width="20" height="5" rx="1"></rect>
+                <path d="M7 15v2"></path>
+                <path d="M17 15v2"></path>
+                <path d="M7 7v2"></path>
+                <path d="M17 7v2"></path>
+            </svg>
+            <span>MASH</span>
+        </div>
+        <p class="copyright">&copy; 2025 MeshAdmin. All rights reserved.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Focus on the username field when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('username').focus();
+    });
+</script>
+{% endblock %}

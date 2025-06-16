@@ -1,0 +1,137 @@
+{% extends "layout.html" %}
+
+{% block title %}User Profile - FlowVision{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                <h2><i class="fas fa-user-circle"></i> User Profile</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>User Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="fw-bold">Username:</label>
+                        <p>{{ current_user.username }}</p>
+                    </div>
+                    
+                    {% if current_user.name %}
+                    <div class="mb-3">
+                        <label class="fw-bold">Full Name:</label>
+                        <p>{{ current_user.name }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="fw-bold">Role:</label>
+                        <p>{{ current_user.role.name if current_user.role else 'No role assigned' }}</p>
+                    </div>
+                    
+                    {% if current_user.company %}
+                    <div class="mb-3">
+                        <label class="fw-bold">Company:</label>
+                        <p>{{ current_user.company }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if current_user.last_login %}
+                    <div class="mb-3">
+                        <label class="fw-bold">Last Login:</label>
+                        <p>{{ current_user.last_login.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if current_user.created_at %}
+                    <div class="mb-3">
+                        <label class="fw-bold">Account Created:</label>
+                        <p>{{ current_user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Change Password</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('user_profile') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="old_password" class="form-label">Current Password</label>
+                            {{ form.old_password(class="form-control", id="old_password") }}
+                            {% if form.old_password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.old_password.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">New Password</label>
+                            {{ form.password(class="form-control", id="password") }}
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">Confirm New Password</label>
+                            {{ form.password2(class="form-control", id="password2") }}
+                            {% if form.password2.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password2.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if current_user.is_administrator() %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h3>Administrator Options</h3>
+                </div>
+                <div class="card-body">
+                    <p>As an administrator, you have access to additional system functions:</p>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('manage_users') }}" class="btn btn-warning">
+                            <i class="fas fa-users"></i> Manage Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+:root[data-theme="dark"] {
+  /* Dark theme colors */
+  --primary-bg: #121212;
+  --secondary-bg: #1e1e1e;
+  --tertiary-bg: #2d2d2d;
+  --primary-text: #e0e0e0;
+  --secondary-text: #a0a0a0;
+  --accent-color: #03dac6;
+  --warning-color: #ff9800;
+  --error-color: #cf6679;
+  --success-color: #4caf50;
+  --info-color: #2196f3;
+  --border-color: #333333;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --hover-bg: rgba(255, 255, 255, 0.1);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark theme specific overrides */
+.card {
+  background-color: var(--card-bg);
+}
+
+.table th {
+  background-color: var(--secondary-bg);
+}
+
+.form-control {
+  background-color: var(--tertiary-bg);
+}
+
+/* Dark theme-specific chart colors */
+.chart-area {
+  fill: rgba(3, 218, 198, 0.1);
+}
+
+.chart-line {
+  stroke: var(--accent-color);
+}
+
+.chart-bar {
+  fill: var(--accent-color);
+}
+
+.chart-pie-1 { fill: var(--accent-color); }
+.chart-pie-2 { fill: var(--info-color); }
+.chart-pie-3 { fill: var(--success-color); }
+.chart-pie-4 { fill: var(--warning-color); }
+.chart-pie-5 { fill: var(--error-color); }
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar-track {
+  background: var(--primary-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tertiary-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}

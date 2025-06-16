@@ -1,0 +1,52 @@
+/**
+ * Dark Red Theme Stylesheet for MASH
+ */
+
+:root[data-theme="dark_red"] {
+  --primary-bg: #121212;      /* Matte black background */
+  --secondary-bg: #1e1e1e;    /* Slightly lighter black for containers */
+  --tertiary-bg: #2d2d2d;     /* Even lighter black for interactive elements */
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --primary-text: #f0f0f0;
+  --secondary-text: #aaaaaa;
+  --accent-color: #c50000;    /* Dark red accent color */
+  --border-color: #333333;
+  --card-bg: #1e1e1e;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --warning-color: #ffc107;
+  --success-color: #4caf50;
+  --error-color: #cf6679;
+  --info-color: #2196f3;
+}
+
+/* Login Form Styles for Dark Red Theme */
+.login-form button[type="submit"],
+.register-form button[type="submit"] {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+/* Override specific components for Dark Red Theme */
+.btn-primary {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+.badge-primary {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+.sidebar-logo {
+  color: var(--accent-color);
+}
+
+/* Chart colors for dark red theme */
+.chart-dark-red-theme {
+  --chart-color-1: #c50000;
+  --chart-color-2: #ff5252;
+  --chart-color-3: #8c0000;
+  --chart-color-4: #ff0000;
+  --chart-color-5: #ffcdd2;
+  --chart-grid-color: rgba(255, 255, 255, 0.1);
+}

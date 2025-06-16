@@ -1,0 +1,189 @@
+{% extends "layout.html" %}
+
+{% block title %}Flow Simulator - FlowVision{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-play-circle me-2 icon-accent"></i>Flow Traffic Simulator</h2>
+    
+    <div class="row">
+        <div class="col-md-5">
+            <!-- Simulation Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog me-2 icon-accent"></i>Configure Simulation</h5>
+                </div>
+                <div class="card-body">
+                    <form id="simulation-form" action="/start_simulation" method="POST" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="template-id" class="form-label">Flow Template (Optional)</label>
+                            <div class="input-group">
+                                <select class="form-select" id="template-id" name="template_id">
+                                    <option value="">No Template (Random Data)</option>
+                                    {% for template in templates %}
+                                        <option value="{{ template.id }}">{{ template.name }} ({{ template.flow_type }})</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-secondary" type="button" id="preview-template">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Select a template to use predefined flow patterns</div>
+                        </div>
+                        
+                        <div id="template-info" class="mb-3">
+                            <div class="alert border-accent">
+                                No template selected. Random flow data will be generated.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="flow-type" class="form-label">Flow Type</label>
+                            <select class="form-select" id="flow-type" name="flow_type" required>
+                                <option value="" selected disabled>Select Flow Type</option>
+                                <option value="netflow">NetFlow</option>
+                                <option value="sflow">sFlow</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a flow type.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="flow-version" class="form-label">Version</label>
+                            <select class="form-select" id="flow-version" name="flow_version" required>
+                                <option value="" selected disabled>Select Version</option>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a version.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="packets-per-second" class="form-label">Packets Per Second</label>
+                            <input type="number" class="form-control" id="packets-per-second" name="packets_per_second" 
+                                   value="100" min="1" max="10000" required>
+                            <div class="form-text">Number of flow packets to generate per second (1-10000)</div>
+                            <div class="invalid-feedback">
+                                Please enter a valid number of packets per second (1-10000).
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="duration" class="form-label">Duration (seconds)</label>
+                            <input type="number" class="form-control" id="duration" name="duration" 
+                                   value="60" min="1" max="3600" required>
+                            <div class="form-text">How long to run the simulation (1-3600 seconds)</div>
+                            <div class="invalid-feedback">
+                                Please enter a valid duration (1-3600 seconds).
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="target-ip" class="form-label">Target IP (Optional)</label>
+                            <input type="text" class="form-control" id="target-ip" name="target_ip" 
+                                   placeholder="Default: 127.0.0.1">
+                            <div class="form-text">IP address to send flow data to (default: localhost)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="target-port" class="form-label">Target Port (Optional)</label>
+                            <input type="number" class="form-control" id="target-port" name="target_port" 
+                                   placeholder="Default: 9995" min="1" max="65535">
+                            <div class="form-text">Port to send flow data to (default: 9995)</div>
+                            <div class="invalid-feedback">
+                                Please enter a valid port number (1-65535).
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn bg-accent">
+                            <i class="fas fa-play me-1"></i>Start Simulation
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            <!-- Active Simulations -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-tasks me-2 icon-accent"></i>Active Simulations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Rate</th>
+                                    <th>Start Time</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="simulations-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">No active simulations</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alerts Container for JavaScript notifications -->
+    <div id="alerts-container" class="mt-3"></div>
+    
+    <!-- Simulation Tips -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-lightbulb me-2 icon-accent"></i>Simulation Tips</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Creating Realistic Simulations</h6>
+                    <ul>
+                        <li>
+                            <strong class="text-accent">Use Templates:</strong> Templates allow you to simulate realistic traffic patterns with predefined source and destination IP addresses, port ranges, and protocols.
+                        </li>
+                        <li>
+                            <strong class="text-accent">Rate Considerations:</strong> Be careful when setting high packet rates as it can consume significant system resources and network bandwidth.
+                        </li>
+                        <li>
+                            <strong class="text-accent">Target Selection:</strong> You can point simulated flow traffic to this collector or to external collectors for testing.
+                        </li>
+                        <li>
+                            <strong class="text-accent">Mixed Flow Types:</strong> Run multiple simulations with different flow types and versions to test multi-format collection capabilities.
+                        </li>
+                    </ul>
+                    
+                    <h6>Available Flow Types</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-accent">NetFlow</h6>
+                            <ul>
+                                <li>Version 5 - Fixed format, widely supported</li>
+                                <li>Version 9 - Template-based, extensible</li>
+                                <li>IPFIX (v10) - Standards-based, advanced</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-accent">sFlow</h6>
+                            <ul>
+                                <li>Version 4 - Original format</li>
+                                <li>Version 5 - Enhanced with additional data</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+{% endblock %}

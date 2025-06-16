@@ -1,0 +1,400 @@
+{% extends 'base.html' %}
+
+{% block title %}Alert Rules - MASH{% endblock %}
+
+{% block page_title %}Alert Rules{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/alerts.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-actions">
+        <h2>Alert Rules</h2>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="showCreateAlertModal()">
+                <i class="fas fa-plus"></i> Create Rule
+            </button>
+        </div>
+    </div>
+    
+    <div class="filter-bar">
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input type="text" id="rule-search" placeholder="Search alert rules..." oninput="filterAlertRules()">
+        </div>
+        
+        <div class="filter-options">
+            <label>Severity:</label>
+            <select id="filter-severity" class="form-control" onchange="filterAlertRules()">
+                <option value="">All Severities</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+                <option value="critical">Critical</option>
+            </select>
+        </div>
+        
+        <div class="filter-options">
+            <label>Data Source:</label>
+            <select id="filter-data-source" class="form-control" onchange="filterAlertRules()">
+                <option value="">All Sources</option>
+                <option value="syslog">Syslog</option>
+                <option value="snmp">SNMP</option>
+                <option value="netflow">NetFlow</option>
+                <option value="sflow">sFlow</option>
+                <option value="windows_events">Windows Events</option>
+                <option value="otel">OpenTelemetry</option>
+            </select>
+        </div>
+        
+        <div class="filter-options">
+            <label>Status:</label>
+            <select id="filter-status" class="form-control" onchange="filterAlertRules()">
+                <option value="">All</option>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
+            </select>
+        </div>
+        
+        <div class="sort-options">
+            <label>Sort By:</label>
+            <select id="sort-rules" class="form-control" onchange="sortAlertRules()">
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="severity-asc">Severity (Low to High)</option>
+                <option value="severity-desc">Severity (High to Low)</option>
+                <option value="created-desc">Newest First</option>
+                <option value="created-asc">Oldest First</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+{% if alert_rules %}
+<div class="content-card">
+    <div class="table-responsive">
+        <table class="table" id="alert-rules-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Data Source</th>
+                    <th>Condition</th>
+                    <th>Severity</th>
+                    <th>Last Triggered</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in alert_rules %}
+                <tr data-rule-id="{{ rule.id }}" data-severity="{{ rule.severity.value }}" data-source="{{ rule.data_source.value }}" data-status="{{ 'enabled' if rule.enabled else 'disabled' }}">
+                    <td>{{ rule.name }}</td>
+                    <td>{{ rule.data_source.value }}</td>
+                    <td class="rule-condition">{{ format_condition(rule.condition) }}</td>
+                    <td>
+                        <span class="badge badge-{{ rule.severity.value }}">{{ rule.severity.value }}</span>
+                    </td>
+                    <td>
+                        {% if rule.alerts %}
+                            {% set last_alert = rule.alerts|sort(attribute='timestamp', reverse=True)|first %}
+                            {{ last_alert.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="toggle-switch small">
+                            <input type="checkbox" id="status-toggle-{{ rule.id }}" {% if rule.enabled %}checked{% endif %} onchange="updateAlertRuleStatus({{ rule.id }}, this.checked)">
+                            <label for="status-toggle-{{ rule.id }}" class="toggle-slider"></label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-secondary" onclick="editAlertRule({{ rule.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="confirmDeleteRule({{ rule.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="content-card">
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-bell-slash"></i>
+        </div>
+        <h3>No Alert Rules</h3>
+        <p>You don't have any alert rules configured yet.</p>
+        <button class="btn btn-primary" onclick="showCreateAlertModal()">
+            <i class="fas fa-plus"></i> Create Rule
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Create/Edit Alert Rule Modal -->
+<div class="modal" id="alert-rule-modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 id="alert-rule-modal-title">Create Alert Rule</h3>
+            <button class="modal-close" onclick="closeModal('alert-rule-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="alert-rule-form">
+                <input type="hidden" id="rule-id" value="">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="rule-name">Rule Name</label>
+                        <input type="text" id="rule-name" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rule-severity">Severity</label>
+                        <select id="rule-severity" class="form-control" required>
+                            <option value="info">Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rule-data-source">Data Source</label>
+                        <select id="rule-data-source" class="form-control" required onchange="updateConditionFields(this.value)">
+                            <option value="">Select Data Source</option>
+                            <option value="syslog">Syslog</option>
+                            <option value="snmp">SNMP</option>
+                            <option value="netflow">NetFlow</option>
+                            <option value="sflow">sFlow</option>
+                            <option value="windows_events">Windows Events</option>
+                            <option value="otel">OpenTelemetry</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rule-enabled">Status</label>
+                        <div class="toggle-container">
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="rule-enabled" checked>
+                                <label for="rule-enabled" class="toggle-slider"></label>
+                            </div>
+                            <span id="rule-status-text">Enabled</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="rule-description">Description</label>
+                    <textarea id="rule-description" class="form-control" rows="2"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Condition</label>
+                    <div id="condition-builder" class="condition-builder">
+                        <div class="condition-row">
+                            <select class="condition-field form-control">
+                                <option value="">Select Field</option>
+                                <!-- Dynamic fields will be populated based on data source -->
+                            </select>
+                            
+                            <select class="condition-operator form-control">
+                                <option value="eq">equals</option>
+                                <option value="neq">not equals</option>
+                                <option value="gt">greater than</option>
+                                <option value="lt">less than</option>
+                                <option value="gte">greater than or equal</option>
+                                <option value="lte">less than or equal</option>
+                                <option value="contains">contains</option>
+                                <option value="not_contains">does not contain</option>
+                                <option value="regex">matches regex</option>
+                            </select>
+                            
+                            <input type="text" class="condition-value form-control" placeholder="Value">
+                            
+                            <button type="button" class="btn btn-sm btn-danger remove-condition">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-controls">
+                        <button type="button" class="btn btn-secondary" onclick="addConditionRow()">
+                            <i class="fas fa-plus"></i> Add Condition
+                        </button>
+                        <select id="condition-logic" class="form-control">
+                            <option value="AND">Match ALL conditions (AND)</option>
+                            <option value="OR">Match ANY condition (OR)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Notification Settings</label>
+                    <div class="notification-settings">
+                        <div class="cooldown-setting">
+                            <label for="rule-cooldown">Cooldown Period (minutes)</label>
+                            <input type="number" id="rule-cooldown" class="form-control" min="0" value="15">
+                        </div>
+                        
+                        <div class="notification-channels">
+                            <div class="channel-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="notify-email" value="email">
+                                    Email
+                                </label>
+                                <div class="channel-config" id="email-config" style="display: none;">
+                                    <input type="text" class="form-control" id="email-recipients" placeholder="Recipients (comma separated)">
+                                </div>
+                            </div>
+                            
+                            <div class="channel-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="notify-slack" value="slack">
+                                    Slack
+                                </label>
+                                <div class="channel-config" id="slack-config" style="display: none;">
+                                    <input type="text" class="form-control" id="slack-channel" placeholder="Channel name">
+                                </div>
+                            </div>
+                            
+                            <div class="channel-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="notify-pagerduty" value="pagerduty">
+                                    PagerDuty
+                                </label>
+                                <div class="channel-config" id="pagerduty-config" style="display: none;">
+                                    <select class="form-control" id="pagerduty-severity">
+                                        <option value="info">Info</option>
+                                        <option value="warning">Warning</option>
+                                        <option value="error">Error</option>
+                                        <option value="critical">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('alert-rule-modal')">Cancel</button>
+            <button class="btn btn-primary" id="save-rule-btn" onclick="saveAlertRule()">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="delete-rule-modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>Confirm Delete</h3>
+            <button class="modal-close" onclick="closeModal('delete-rule-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this alert rule? This action cannot be undone.</p>
+            <p><strong id="delete-rule-name"></strong></p>
+            <input type="hidden" id="delete-rule-id">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('delete-rule-modal')">Cancel</button>
+            <button class="btn btn-danger" onclick="deleteAlertRule()">Delete</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initAlertRules();
+    
+    // Update status text based on toggle state
+    const ruleEnabled = document.getElementById('rule-enabled');
+    const ruleStatusText = document.getElementById('rule-status-text');
+    
+    if (ruleEnabled && ruleStatusText) {
+        ruleEnabled.addEventListener('change', function() {
+            ruleStatusText.textContent = this.checked ? 'Enabled' : 'Disabled';
+        });
+    }
+    
+    // Set up notification channel toggles
+    const channelToggles = document.querySelectorAll('.notification-channels input[type="checkbox"]');
+    channelToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const configId = this.value + '-config';
+            const configEl = document.getElementById(configId);
+            if (configEl) {
+                configEl.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+    });
+    
+    // Set up condition row removal
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.remove-condition') || e.target.closest('.remove-condition')) {
+            const row = e.target.closest('.condition-row');
+            if (row && document.querySelectorAll('.condition-row').length > 1) {
+                row.remove();
+            }
+        }
+    });
+});
+
+function confirmDeleteRule(ruleId) {
+    const row = document.querySelector(`tr[data-rule-id="${ruleId}"]`);
+    if (row) {
+        const ruleName = row.cells[0].textContent;
+        document.getElementById('delete-rule-name').textContent = ruleName;
+        document.getElementById('delete-rule-id').value = ruleId;
+        showModal('delete-rule-modal');
+    }
+}
+
+function deleteAlertRule() {
+    const ruleId = document.getElementById('delete-rule-id').value;
+    if (!ruleId) return;
+    
+    // Send delete request to the server
+    fetch(`/api/alert_rules/${ruleId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to delete alert rule');
+        return response.json();
+    })
+    .then(data => {
+        showNotification('Alert rule deleted successfully', 'success');
+        // Remove from table
+        const row = document.querySelector(`tr[data-rule-id="${ruleId}"]`);
+        if (row) row.remove();
+    })
+    .catch(error => {
+        console.error('Error deleting alert rule:', error);
+        showNotification('Error deleting alert rule', 'error');
+    })
+    .finally(() => {
+        closeModal('delete-rule-modal');
+    });
+}
+
+function getCsrfToken() {
+    // Get CSRF token from meta tag
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+</script>
+{% endblock %}

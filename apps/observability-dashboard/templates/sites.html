@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Sites - MASH{% endblock %}
+
+{% block page_title %}Sites{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/customers.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-actions">
+        <h2>Customer Sites</h2>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="showCreateSiteModal()">
+                <i class="fas fa-plus"></i> New Site
+            </button>
+        </div>
+    </div>
+    
+    {% if sites %}
+    <div class="filter-bar">
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input type="text" id="site-search" placeholder="Search sites..." oninput="filterSites()">
+        </div>
+        <div class="filter-options">
+            <label>Organization:</label>
+            <select id="filter-organization" class="form-control" onchange="filterSites()">
+                <option value="">All Organizations</option>
+                {% for org in organizations %}
+                <option value="{{ org.id }}">{{ org.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sort-options">
+            <label for="sort-sites">Sort By:</label>
+            <select id="sort-sites" class="form-control" onchange="sortSites()">
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="created-desc">Newest First</option>
+                <option value="created-asc">Oldest First</option>
+            </select>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="content-card">
+    {% if sites %}
+    <div class="table-responsive">
+        <table class="table" id="sites-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Organization</th>
+                    <th>Address</th>
+                    <th>Devices</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for site in sites %}
+                <tr data-site-id="{{ site.id }}" data-org-id="{{ site.organization_id }}">
+                    <td>{{ site.name }}</td>
+                    <td>{{ site.organization.name }}</td>
+                    <td>{{ site.address or 'N/A' }}</td>
+                    <td>{{ site.devices|length }}</td>
+                    <td title="{{ site.created_at }}">{{ site.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('customers.site_details', site_id=site.id) }}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-secondary" onclick="editSite({{ site.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-map-marker-alt"></i>
+        </div>
+        <h3>No Sites</h3>
+        <p>You don't have any sites yet. Create one to get started.</p>
+        <button class="btn btn-primary" onclick="showCreateSiteModal()">
+            <i class="fas fa-plus"></i> New Site
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Create Site Modal -->
+<div class="modal" id="site-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="site-modal-title">Create Site</h3>
+            <button class="modal-close" onclick="closeModal('site-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="site-form">
+                <input type="hidden" id="site-id" value="">
+                <div class="form-group">
+                    <label for="site-organization">Organization</label>
+                    <select id="site-organization" class="form-control" required>
+                        {% for org in organizations %}
+                        <option value="{{ org.id }}">{{ org.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="site-name">Site Name</label>
+                    <input type="text" id="site-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="site-description">Description</label>
+                    <textarea id="site-description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="site-address">Address</label>
+                    <input type="text" id="site-address" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="site-contact">Contact Information</label>
+                    <input type="text" id="site-contact" class="form-control" placeholder="Name, phone, email...">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('site-modal')">Cancel</button>
+            <button class="btn btn-primary" id="save-site-btn" onclick="saveSite()">Create</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

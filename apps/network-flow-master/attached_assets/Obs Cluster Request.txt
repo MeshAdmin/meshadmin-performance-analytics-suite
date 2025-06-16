@@ -1,0 +1,31 @@
+Please create me a fully self-contained "turn-key" single script to be ran on an Ubuntu 24.04 server (existing components may or may not exist already), which deploys a fully HA k8s Kubernetes (and the following apps) & a fully configured and interconnected observability stack/cluster which contains the following, all bi-directionally configured to interconnect:
+* Grafana Dashboards (Enterprise)
+* Prometheus
+* Grafana Loki
+* Grafana Thanos
+* Grafana Mirmir
+* Grafana Tempo
+* Grafana Alloy
+* Grafana k6
+* Grafana Logs
+* GoFlow2
+* InfluxDB2
+* Netbox
+* Traefik
+* Minio
+* Guacamole
+* Ansible
+The script should be able to be used on a fresh system or already existing for redeploy or upgrading, the script is smart enough to do what it needs to do. This script should also deploy a fully functioning and configured k8s cluster. The first server it is ran on, is the "primary" & initial host, and each host/node the script is ran on, will ask if it's the first host or not, and if not it does a full turn-key deployment and add that host to the newly created k8s on the first/primary host. Rinse and repeat this process (I will be starting out with a 4-node cluster (Proxmox). 
+This cluster needs to be extremely GUI-packed with and utilized for all administration of all components. The inclusion of various templates/exampes with each component would be appreciated. The most feature-rich option if there is one depending on the service. From administering the k8s cluster, to the Grafana Dashboards, to the loadbalancer, etc. - should all be visual/GUI-based administration. The loadbalancer in this occasion is Traefik, but if there is a just as good and easy to administer visually solution, please advise. I also think we need to add some blackbox-exporter, node-exporter, cadvisor, etc. all added abd configured - but again, if you know of a better option, let me know. As an FYI, I really dig bleeding edge options, if it gives more features/functionality and is fairly stable. 
+Whatever else you recommend across the board which can meet our stated goals - I am happy to listen.
+Please add a "Variables" section at the top of the script, which I can go in and add any required secrets/keys, data, etc. that may be required (ie, username, email address, passwords, API keys,m etc.), making this section the only section I should have to add to/do.
+This cluster, is expected to be ingesting about 500GB per day (obviously ingesting, but storage of those is usually about 1% of that a day), receiving primarily network infrastructure such as WatchGuard FireClusters, Cisco ASAa, and various makes/models of switches, routers, storage, servers, etc.
+For the ingestion protocols/ports:
+Syslog - UDP 1514
+NetFlow - UDP 2055
+sFlow - UDP 6343
+SNMP Traps - TCP/UDP 161
+Windows Events, Metrics, and Traces (if any)
+The goal is to utilize Grafana Dashboards as our primary Obs site with dashboards that should cover everything for our logging ingestion, but also our k8s cluster and their associated hosts.
+For reference, the VM/cluster host machines are all Dell PowerEdge r740xd servers with flash/ssd drives and roughly 80TB of usable space within our Proxmox/Ceph cluster housing these Obs hosts. Each host also has 256GB RAM, Xeon Gold 2 socket totaling 48 vCPU Cores, multiple 1GB, 10GB, and soon 40GBs NICs/uplinks.
+If context length could be a concern, feel free to break up the script in 2 parts.

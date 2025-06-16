@@ -1,0 +1,227 @@
+{% extends "layout.html" %}
+
+{% block title %}Device Information - {{ mib_file.filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-server me-2 icon-accent"></i>Device Information</h2>
+        <div>
+            <a href="{{ url_for('mib_info', mib_id=mib_file.id) }}" class="btn btn-secondary me-2">
+                <i class="fas fa-info-circle me-1"></i> MIB Details
+            </a>
+            <a href="{{ url_for('mib_manager') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to MIB Manager
+            </a>
+        </div>
+    </div>
+    
+    <!-- MIB File Info -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>MIB File: {{ mib_file.filename }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <th style="width: 140px;">Device Type:</th>
+                            <td>{{ mib_file.device_type or 'Unknown' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Upload Date:</th>
+                            <td>{{ mib_file.upload_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <th style="width: 140px;">Description:</th>
+                            <td>{{ mib_file.description or 'No description provided' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge" style="background-color: {% if mib_file.parsed %}#8B0000{% else %}#666600{% endif %};">
+                                    {% if mib_file.parsed %}Parsed{% else %}Not Parsed{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Device Details -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-microchip me-2 icon-accent"></i>Detected Device Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-4">
+                        <h6 class="mb-3">Device Identity</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th style="width: 140px;">Device Name:</th>
+                                <td>{{ device_info.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Vendor:</th>
+                                <td>
+                                    {% if device_info.vendor %}
+                                        <span class="badge bg-info">{{ device_info.vendor }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Unknown</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Model:</th>
+                                <td>{{ device_info.model or 'Unknown' }}</td>
+                            </tr>
+                            <tr>
+                                <th>OS Version:</th>
+                                <td>{{ device_info.os_version or 'Unknown' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-4">
+                        <h6 class="mb-3">Flow Capabilities</h6>
+                        {% if device_info.flow_capabilities %}
+                            <div class="mb-3">
+                                {% for capability in device_info.flow_capabilities %}
+                                    <span class="badge bg-success me-2 mb-2">{{ capability }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                No flow capabilities detected for this device.
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h6 class="mb-3">Description</h6>
+                        <p>{{ device_info.description or 'No detailed description available.' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Common OIDs -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-sitemap me-2 icon-accent"></i>Common System OIDs</h5>
+        </div>
+        <div class="card-body">
+            {% if device_info.oids %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>OID</th>
+                                <th>Name</th>
+                                <th>Module</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for oid, info in device_info.oids.items() %}
+                                <tr>
+                                    <td><code>{{ oid }}</code></td>
+                                    <td>{{ info.name }}</td>
+                                    <td>{{ info.module }}</td>
+                                    <td>{{ info.description|truncate(100) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary">
+                    No common system OIDs found for this device.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Flow Implementation -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-project-diagram me-2 icon-accent"></i>Flow Implementation</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Flow Collection Configuration</h6>
+                    {% if device_info.flow_capabilities %}
+                        <div class="alert alert-info">
+                            <p><strong>Recommended configuration:</strong></p>
+                            <ul class="mb-0">
+                                {% if 'NetFlow v5' in device_info.flow_capabilities %}
+                                    <li>NetFlow v5: Port 2055/UDP</li>
+                                {% endif %}
+                                {% if 'NetFlow v9' in device_info.flow_capabilities %}
+                                    <li>NetFlow v9: Port 2055/UDP</li>
+                                {% endif %}
+                                {% if 'IPFIX' in device_info.flow_capabilities %}
+                                    <li>IPFIX: Port 4739/UDP</li>
+                                {% endif %}
+                                {% if 'sFlow v5' in device_info.flow_capabilities %}
+                                    <li>sFlow v5: Port 6343/UDP</li>
+                                {% endif %}
+                                {% if 'NetStream v5' in device_info.flow_capabilities or 'NetStream v9' in device_info.flow_capabilities %}
+                                    <li>NetStream: Port 2055/UDP</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            Flow collection capabilities could not be determined from this MIB.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6>Device Compatibility</h6>
+                    <div class="progress mb-3" style="height: 25px;">
+                        {% set compatibility_score = 100 if device_info.flow_capabilities else 50 %}
+                        {% if device_info.vendor %}
+                            {% set compatibility_score = compatibility_score + 20 %}
+                        {% endif %}
+                        {% if device_info.model %}
+                            {% set compatibility_score = compatibility_score + 10 %}
+                        {% endif %}
+                        {% if compatibility_score > 100 %}
+                            {% set compatibility_score = 100 %}
+                        {% endif %}
+                        
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ compatibility_score }}%" 
+                             aria-valuenow="{{ compatibility_score }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ compatibility_score }}%
+                        </div>
+                    </div>
+                    <p>
+                        {% if compatibility_score >= 90 %}
+                            <i class="fas fa-check-circle text-success me-2"></i> This device is fully compatible with the FlowVision platform.
+                        {% elif compatibility_score >= 70 %}
+                            <i class="fas fa-check-circle text-success me-2"></i> This device is compatible with the FlowVision platform.
+                        {% elif compatibility_score >= 50 %}
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i> This device is likely compatible, but some features may not be available.
+                        {% else %}
+                            <i class="fas fa-times-circle text-danger me-2"></i> This device may have limited compatibility with the FlowVision platform.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

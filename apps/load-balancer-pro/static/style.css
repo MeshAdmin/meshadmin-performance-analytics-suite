@@ -1,0 +1,133 @@
+/* Global Styles */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Load Balancer UI Styles */
+.lb-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Table Styles */
+.lb-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.lb-connections-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lb-connections-table th, 
+.lb-connections-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.lb-connections-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.lb-connections-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Stats Dashboard */
+.lb-stats-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.lb-stat-box {
+    background-color: #f5f5f5;
+    border-radius: 5px;
+    padding: 15px;
+    flex: 1;
+    min-width: 150px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.lb-stat-title {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.lb-stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Graph Container */
+.lb-graph-container {
+    margin: 20px 0;
+    height: 300px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Buttons */
+.lb-button-container {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.lb-success-button {
+    background-color: #2ca02c;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.lb-danger-button {
+    background-color: #d62728;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Status Indicators */
+.lb-status-running {
+    color: #2ca02c;
+    font-weight: bold;
+}
+
+.lb-status-stopped {
+    color: #888;
+}
+
+.lb-status-error {
+    color: #d62728;
+    font-weight: bold;
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+    .lb-stats-container {
+        flex-direction: column;
+    }
+    
+    .lb-stat-box {
+        width: 100%;
+    }
+}

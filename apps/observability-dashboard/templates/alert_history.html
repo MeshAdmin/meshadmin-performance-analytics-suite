@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+
+{% block title %}Alert History - MASH{% endblock %}
+
+{% block page_title %}Alert History{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/alerts.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-actions">
+        <h2>Alert History</h2>
+        <div class="actions">
+            <button class="btn btn-primary" id="bulk-acknowledge-btn" disabled onclick="bulkAcknowledgeAlerts()">
+                <i class="fas fa-check"></i> Acknowledge Selected
+            </button>
+            <button class="btn btn-primary" id="bulk-resolve-btn" disabled onclick="bulkResolveAlerts()">
+                <i class="fas fa-check-double"></i> Resolve Selected
+            </button>
+        </div>
+    </div>
+    
+    <div class="filter-bar">
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input type="text" id="alert-search" placeholder="Search alerts..." oninput="filterAlertHistory()">
+        </div>
+        
+        <div class="filter-options">
+            <label>Severity:</label>
+            <select id="filter-alert-severity" class="form-control" onchange="filterAlertHistory()">
+                <option value="">All Severities</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+                <option value="critical">Critical</option>
+            </select>
+        </div>
+        
+        <div class="filter-options">
+            <label>Status:</label>
+            <select id="filter-alert-status" class="form-control" onchange="filterAlertHistory()">
+                <option value="">All</option>
+                <option value="active">Active</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="resolved">Resolved</option>
+            </select>
+        </div>
+        
+        <div class="filter-options">
+            <label>Time Range:</label>
+            <select id="filter-alert-time" class="form-control" onchange="filterAlertHistory()">
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
+        
+        <div class="sort-options">
+            <label>Sort By:</label>
+            <select id="sort-alerts" class="form-control" onchange="filterAlertHistory()">
+                <option value="time-desc">Newest First</option>
+                <option value="time-asc">Oldest First</option>
+                <option value="severity-desc">Severity (High to Low)</option>
+                <option value="severity-asc">Severity (Low to High)</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="alert-stats-summary">
+    <div class="alert-stat-card">
+        <div class="stat-value">{{ alerts|length }}</div>
+        <div class="stat-label">Total Alerts</div>
+    </div>
+    <div class="alert-stat-card">
+        <div class="stat-value">{{ alerts|selectattr('resolved', 'equalto', False)|selectattr('acknowledged', 'equalto', False)|list|length }}</div>
+        <div class="stat-label">Active</div>
+    </div>
+    <div class="alert-stat-card">
+        <div class="stat-value">{{ alerts|selectattr('acknowledged', 'equalto', True)|selectattr('resolved', 'equalto', False)|list|length }}</div>
+        <div class="stat-label">Acknowledged</div>
+    </div>
+    <div class="alert-stat-card">
+        <div class="stat-value">{{ alerts|selectattr('resolved', 'equalto', True)|list|length }}</div>
+        <div class="stat-label">Resolved</div>
+    </div>
+</div>
+
+{% if alerts %}
+<div class="content-card">
+    <div class="alert-list-header">
+        <div class="alert-count">
+            Showing <span id="filtered-alert-count">{{ alerts|length }}</span> alerts
+        </div>
+        <div class="alert-actions">
+            <button class="btn btn-sm btn-secondary" onclick="refreshAlerts()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table" id="alerts-table">
+            <thead>
+                <tr>
+                    <th>
+                        <input type="checkbox" id="select-all-alerts" onchange="toggleSelectAllAlerts(this.checked)">
+                    </th>
+                    <th>Time</th>
+                    <th>Rule</th>
+                    <th>Message</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alert in alerts %}
+                <tr data-alert-id="{{ alert.id }}" 
+                    data-severity="{{ alert.severity.value }}" 
+                    data-status="{{ 'resolved' if alert.resolved else 'acknowledged' if alert.acknowledged else 'active' }}" 
+                    data-timestamp="{{ alert.timestamp.isoformat() }}">
+                    <td>
+                        <input type="checkbox" class="alert-select" value="{{ alert.id }}" onchange="updateBulkActionButtons()">
+                    </td>
+                    <td>{{ alert.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ alert.alert_rule.name if alert.alert_rule else 'System' }}</td>
+                    <td>{{ alert.message }}</td>
+                    <td>
+                        <span class="badge badge-{{ alert.severity.value }}">{{ alert.severity.value }}</span>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if alert.resolved else 'warning' if alert.acknowledged else 'error' }}">
+                            {{ 'Resolved' if alert.resolved else 'Acknowledged' if alert.acknowledged else 'Active' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            {% if not alert.acknowledged and not alert.resolved %}
+                            <button class="btn btn-sm btn-secondary" onclick="acknowledgeAlert({{ alert.id }})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            {% endif %}
+                            
+                            {% if not alert.resolved %}
+                            <button class="btn btn-sm btn-success" onclick="resolveAlert({{ alert.id }})">
+                                <i class="fas fa-check-double"></i>
+                            </button>
+                            {% endif %}
+                            
+                            <button class="btn btn-sm btn-info" onclick="showAlertDetails({{ alert.id }})">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="content-card">
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-bell-slash"></i>
+        </div>
+        <h3>No Alerts</h3>
+        <p>There are no alerts in the selected time range.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Alert Details Modal -->
+<div class="modal" id="alert-details-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Alert Details</h3>
+            <button class="modal-close" onclick="closeModal('alert-details-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="alert-details">
+                <div class="info-grid">
+                    <div class="info-group">
+                        <label>Alert ID</label>
+                        <div id="detail-alert-id"></div>
+                    </div>
+                    <div class="info-group">
+                        <label>Time</label>
+                        <div id="detail-alert-time"></div>
+                    </div>
+                    <div class="info-group">
+                        <label>Severity</label>
+                        <div id="detail-alert-severity"></div>
+                    </div>
+                    <div class="info-group">
+                        <label>Status</label>
+                        <div id="detail-alert-status"></div>
+                    </div>
+                    <div class="info-group span-full">
+                        <label>Rule</label>
+                        <div id="detail-alert-rule"></div>
+                    </div>
+                    <div class="info-group span-full">
+                        <label>Message</label>
+                        <div id="detail-alert-message"></div>
+                    </div>
+                    <div class="info-group span-full">
+                        <label>Details</label>
+                        <pre id="detail-alert-details" class="code-block"></pre>
+                    </div>
+                </div>
+                
+                <div class="alert-timeline mt-4">
+                    <h4>Alert Timeline</h4>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Alert Triggered</h5>
+                                <p id="timeline-trigger-time"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item" id="timeline-acknowledged" style="display: none;">
+                            <div class="timeline-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Alert Acknowledged</h5>
+                                <p id="timeline-ack-time"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item" id="timeline-resolved" style="display: none;">
+                            <div class="timeline-icon">
+                                <i class="fas fa-check-double"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5>Alert Resolved</h5>
+                                <p id="timeline-resolve-time"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <div id="alert-modal-actions">
+                <button class="btn btn-secondary" onclick="acknowledgeAlertFromModal()">Acknowledge</button>
+                <button class="btn btn-success" onclick="resolveAlertFromModal()">Resolve</button>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModal('alert-details-modal')">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initAlertHistory();
+    setupAlertRefresh();
+});
+
+let currentAlertDetails = null;
+
+function showAlertDetails(alertId) {
+    const row = document.querySelector(`tr[data-alert-id="${alertId}"]`);
+    if (!row) return;
+    
+    // Get alert details from API
+    fetch(`/api/alerts/${alertId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch alert details');
+            return response.json();
+        })
+        .then(alert => {
+            currentAlertDetails = alert;
+            
+            // Populate modal with alert details
+            document.getElementById('detail-alert-id').textContent = alert.id;
+            document.getElementById('detail-alert-time').textContent = formatTimestamp(alert.timestamp);
+            
+            const severityEl = document.getElementById('detail-alert-severity');
+            severityEl.innerHTML = `<span class="badge badge-${alert.severity}">${alert.severity}</span>`;
+            
+            const statusEl = document.getElementById('detail-alert-status');
+            const status = alert.resolved ? 'Resolved' : alert.acknowledged ? 'Acknowledged' : 'Active';
+            const statusClass = alert.resolved ? 'success' : alert.acknowledged ? 'warning' : 'error';
+            statusEl.innerHTML = `<span class="badge badge-${statusClass}">${status}</span>`;
+            
+            document.getElementById('detail-alert-rule').textContent = alert.rule_name || 'System Alert';
+            document.getElementById('detail-alert-message').textContent = alert.message;
+            document.getElementById('detail-alert-details').textContent = alert.details || 'No additional details available';
+            
+            // Set timeline information
+            document.getElementById('timeline-trigger-time').textContent = formatTimestamp(alert.timestamp);
+            
+            const timelineAck = document.getElementById('timeline-acknowledged');
+            if (alert.acknowledged) {
+                timelineAck.style.display = 'flex';
+                document.getElementById('timeline-ack-time').textContent = formatTimestamp(alert.acknowledged_at);
+            } else {
+                timelineAck.style.display = 'none';
+            }
+            
+            const timelineResolved = document.getElementById('timeline-resolved');
+            if (alert.resolved) {
+                timelineResolved.style.display = 'flex';
+                document.getElementById('timeline-resolve-time').textContent = formatTimestamp(alert.resolved_at);
+            } else {
+                timelineResolved.style.display = 'none';
+            }
+            
+            // Configure action buttons
+            const actionsContainer = document.getElementById('alert-modal-actions');
+            if (alert.resolved) {
+                actionsContainer.style.display = 'none';
+            } else {
+                actionsContainer.style.display = 'flex';
+                
+                const ackButton = actionsContainer.querySelector('button:first-child');
+                if (alert.acknowledged) {
+                    ackButton.style.display = 'none';
+                } else {
+                    ackButton.style.display = 'inline-block';
+                }
+            }
+            
+            // Show the modal
+            showModal('alert-details-modal');
+        })
+        .catch(error => {
+            console.error('Error fetching alert details:', error);
+            showNotification('Error fetching alert details', 'error');
+        });
+}
+
+function acknowledgeAlertFromModal() {
+    if (!currentAlertDetails) return;
+    
+    acknowledgeAlert(currentAlertDetails.id, () => {
+        // Update the modal to reflect the acknowledged state
+        const statusEl = document.getElementById('detail-alert-status');
+        statusEl.innerHTML = `<span class="badge badge-warning">Acknowledged</span>`;
+        
+        const timelineAck = document.getElementById('timeline-acknowledged');
+        timelineAck.style.display = 'flex';
+        document.getElementById('timeline-ack-time').textContent = formatTimestamp(new Date());
+        
+        const actionsContainer = document.getElementById('alert-modal-actions');
+        const ackButton = actionsContainer.querySelector('button:first-child');
+        ackButton.style.display = 'none';
+        
+        // Update the currentAlertDetails
+        currentAlertDetails.acknowledged = true;
+        currentAlertDetails.acknowledged_at = new Date().toISOString();
+    });
+}
+
+function resolveAlertFromModal() {
+    if (!currentAlertDetails) return;
+    
+    resolveAlert(currentAlertDetails.id, () => {
+        // Update the modal to reflect the resolved state
+        const statusEl = document.getElementById('detail-alert-status');
+        statusEl.innerHTML = `<span class="badge badge-success">Resolved</span>`;
+        
+        const timelineResolved = document.getElementById('timeline-resolved');
+        timelineResolved.style.display = 'flex';
+        document.getElementById('timeline-resolve-time').textContent = formatTimestamp(new Date());
+        
+        const actionsContainer = document.getElementById('alert-modal-actions');
+        actionsContainer.style.display = 'none';
+        
+        // Update the currentAlertDetails
+        currentAlertDetails.resolved = true;
+        currentAlertDetails.resolved_at = new Date().toISOString();
+    });
+}
+
+function toggleSelectAllAlerts(checked) {
+    const checkboxes = document.querySelectorAll('.alert-select');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = checked;
+    });
+    
+    updateBulkActionButtons();
+}
+
+function updateBulkActionButtons() {
+    const selectedAlerts = getSelectedAlerts();
+    const bulkAckBtn = document.getElementById('bulk-acknowledge-btn');
+    const bulkResolveBtn = document.getElementById('bulk-resolve-btn');
+    
+    if (bulkAckBtn) {
+        bulkAckBtn.disabled = selectedAlerts.length === 0;
+    }
+    
+    if (bulkResolveBtn) {
+        bulkResolveBtn.disabled = selectedAlerts.length === 0;
+    }
+}
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Observability Dashboard{% endblock %}
+
+{% block page_title %}Register{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="card auth-card">
+        <div class="card-header">
+            <h2 class="card-title">Create Your Account</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('auth.register') }}">
+                {{ form.csrf_token }}
+                
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    {{ form.username(class="form-control", placeholder="Choose a username", id="username") }}
+                    {% if form.username.errors %}
+                    <div class="form-error">{{ form.username.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    {{ form.email(class="form-control", placeholder="Your email address", id="email") }}
+                    {% if form.email.errors %}
+                    <div class="form-error">{{ form.email.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    {{ form.password(class="form-control", placeholder="Create a password", id="password") }}
+                    {% if form.password.errors %}
+                    <div class="form-error">{{ form.password.errors[0] }}</div>
+                    {% endif %}
+                    <small class="text-muted">Password must be at least 8 characters long and include a mix of letters, numbers, and symbols.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    {{ form.confirm_password(class="form-control", placeholder="Confirm your password", id="confirm_password") }}
+                    {% if form.confirm_password.errors %}
+                    <div class="form-error">{{ form.confirm_password.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="organization_name" class="form-label">Organization Name</label>
+                    {{ form.organization_name(class="form-control", placeholder="Your company or organization name", id="organization_name") }}
+                    {% if form.organization_name.errors %}
+                    <div class="form-error">{{ form.organization_name.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.is_msp(class="form-check-input", id="is_msp") }}
+                        <label for="is_msp" class="form-check-label">This is an MSP organization</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.terms(class="form-check-input", id="terms") }}
+                        <label for="terms" class="form-check-label">I agree to the <a href="{{ url_for('auth.terms') }}" target="_blank">Terms and Conditions</a></label>
+                        {% if form.terms.errors %}
+                        <div class="form-error">{{ form.terms.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary w-100">Register</button>
+                </div>
+            </form>
+            
+            <div class="auth-links">
+                <span>Already have an account?</span>
+                <a href="{{ url_for('auth.login') }}">Login here</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="auth-footer">
+        <div class="company-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="4"></circle>
+                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+            </svg>
+            <span>ObservMS</span>
+        </div>
+        <p class="copyright">&copy; 2023 ObservMS. All rights reserved.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Real-time password validation feedback
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirm_password');
+    
+    passwordInput.addEventListener('input', validatePassword);
+    confirmInput.addEventListener('input', validatePasswordMatch);
+    
+    function validatePassword() {
+        const password = passwordInput.value;
+        let isValid = true;
+        let feedback = '';
+        
+        if (password.length < 8) {
+            isValid = false;
+            feedback += 'Password must be at least 8 characters long. ';
+        }
+        
+        if (!/[A-Z]/.test(password)) {
+            isValid = false;
+            feedback += 'Include at least one uppercase letter. ';
+        }
+        
+        if (!/[a-z]/.test(password)) {
+            isValid = false;
+            feedback += 'Include at least one lowercase letter. ';
+        }
+        
+        if (!/[0-9]/.test(password)) {
+            isValid = false;
+            feedback += 'Include at least one number. ';
+        }
+        
+        if (!/[^A-Za-z0-9]/.test(password)) {
+            isValid = false;
+            feedback += 'Include at least one special character. ';
+        }
+        
+        // Update the feedback
+        const feedbackElement = passwordInput.nextElementSibling;
+        if (feedbackElement.classList.contains('text-muted')) {
+            feedbackElement.textContent = isValid ? 'Password is strong.' : feedback;
+            feedbackElement.className = isValid ? 'text-success' : 'text-warning';
+        }
+        
+        // Update the field class
+        passwordInput.className = isValid ? 'form-control is-valid' : 'form-control is-warning';
+        
+        return isValid;
+    }
+    
+    function validatePasswordMatch() {
+        const password = passwordInput.value;
+        const confirm = confirmInput.value;
+        
+        const isMatch = password === confirm && confirm !== '';
+        
+        // Update the field class
+        confirmInput.className = isMatch ? 'form-control is-valid' : 'form-control is-warning';
+        
+        return isMatch;
+    }
+</script>
+{% endblock %}

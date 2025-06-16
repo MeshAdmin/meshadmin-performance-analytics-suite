@@ -1,0 +1,888 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - Observability Dashboard{% endblock %}
+
+{% block page_title %}Alerts{% endblock %}
+
+{% block head_extra %}
+<!-- Additional CSS for alerts page -->
+<style>
+    .alerts-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .alert-filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .tabs {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .tab {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .tab.active {
+        border-bottom-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .alert-count {
+        display: inline-block;
+        background-color: var(--tertiary-bg);
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+        margin-left: 5px;
+    }
+    
+    .alert-row.info {
+        border-left: 4px solid var(--info-color);
+    }
+    
+    .alert-row.warning {
+        border-left: 4px solid var(--warning-color);
+    }
+    
+    .alert-row.error {
+        border-left: 4px solid var(--error-color);
+    }
+    
+    .alert-row.critical {
+        border-left: 4px solid var(--error-color);
+        background-color: rgba(207, 102, 121, 0.05);
+    }
+    
+    .alert-row.acknowledged {
+        opacity: 0.8;
+    }
+    
+    .alert-row.resolved {
+        opacity: 0.6;
+    }
+    
+    .alert-rule-row.rule-enabled {
+        border-left: 4px solid var(--success-color);
+    }
+    
+    .alert-rule-row:not(.rule-enabled) {
+        border-left: 4px solid var(--border-color);
+        opacity: 0.7;
+    }
+    
+    .conditions-display {
+        font-family: monospace;
+        padding: 5px;
+        background-color: var(--secondary-bg);
+        border-radius: 4px;
+        margin-top: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .notification-channels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .channel-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        background-color: var(--secondary-bg);
+        font-size: 0.8rem;
+    }
+    
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+    }
+    
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border-color);
+        transition: .4s;
+        border-radius: 20px;
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+        background-color: var(--accent-color);
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+    
+    .bulk-actions {
+        padding: 10px;
+        background-color: var(--secondary-bg);
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    .alert-item {
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        background-color: var(--card-bg);
+        border-left: 4px solid;
+    }
+    
+    .alert-item.info {
+        border-left-color: var(--info-color);
+    }
+    
+    .alert-item.warning {
+        border-left-color: var(--warning-color);
+    }
+    
+    .alert-item.error {
+        border-left-color: var(--error-color);
+    }
+    
+    .alert-item.critical {
+        border-left-color: var(--error-color);
+        background-color: rgba(207, 102, 121, 0.05);
+    }
+    
+    .alert-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .alert-time {
+        font-size: 0.85rem;
+        color: var(--secondary-text);
+    }
+    
+    .alert-message {
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+    
+    .alert-source {
+        font-size: 0.85rem;
+        color: var(--secondary-text);
+    }
+    
+    .condition-builder {
+        margin-top: 10px;
+        padding: 15px;
+        background-color: var(--secondary-bg);
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="tabs">
+    <div class="tab active" data-tab="alerts">Active Alerts <span class="alert-count">{{ active_alerts|length }}</span></div>
+    <div class="tab" data-tab="history">Alert History</div>
+    <div class="tab" data-tab="rules">Alert Rules</div>
+    <div class="tab" data-tab="notifications">Notification Settings</div>
+</div>
+
+<!-- Active Alerts Tab -->
+<div id="alerts-tab" class="tab-content active">
+    <div class="alerts-toolbar">
+        <div class="alert-filters">
+            <select id="severity-filter" class="form-control">
+                <option value="all">All Severities</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+                <option value="critical">Critical</option>
+            </select>
+            
+            <select id="status-filter" class="form-control">
+                <option value="all">All Status</option>
+                <option value="new">New</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="resolved">Resolved</option>
+            </select>
+            
+            <select id="source-filter" class="form-control">
+                <option value="all">All Sources</option>
+                <option value="syslog">Syslog</option>
+                <option value="snmp">SNMP</option>
+                <option value="netflow">NetFlow</option>
+                <option value="sflow">sFlow</option>
+                <option value="windows_events">Windows Events</option>
+                <option value="otel">OTEL</option>
+            </select>
+            
+            <input type="text" id="alert-date-range" class="form-control" placeholder="Date range">
+        </div>
+        
+        <div id="filtered-alert-count" class="alert-count">
+            {{ active_alerts|length }} alerts
+        </div>
+    </div>
+    
+    <!-- Bulk Actions -->
+    <div class="bulk-actions">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="form-check d-inline-block mr-3">
+                    <input type="checkbox" class="form-check-input" id="select-all-alerts">
+                    <label class="form-check-label" for="select-all-alerts">Select All</label>
+                </div>
+                <span class="ml-3">With selected:</span>
+            </div>
+            <div>
+                <button id="bulk-acknowledge" class="btn btn-sm btn-info">Acknowledge</button>
+                <button id="bulk-resolve" class="btn btn-sm btn-success">Resolve</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table alerts-table">
+                <thead>
+                    <tr>
+                        <th width="30px"></th>
+                        <th width="100px">Severity</th>
+                        <th width="180px">Timestamp</th>
+                        <th>Message</th>
+                        <th width="150px">Source</th>
+                        <th width="120px">Status</th>
+                        <th width="200px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if active_alerts %}
+                        {% for alert in active_alerts %}
+                        <tr class="alert-row {{ alert.severity|lower }}" 
+                            data-alert-id="{{ alert.id }}" 
+                            data-severity="{{ alert.severity|lower }}" 
+                            data-status="{{ 'resolved' if alert.resolved else 'acknowledged' if alert.acknowledged else 'new' }}" 
+                            data-source="{{ alert.source_type }}" 
+                            data-timestamp="{{ alert.timestamp }}">
+                            <td>
+                                <input type="checkbox" class="alert-select">
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ alert.severity|lower }}">{{ alert.severity }}</span>
+                            </td>
+                            <td>{{ alert.timestamp|format_datetime }}</td>
+                            <td>{{ alert.message }}</td>
+                            <td>{{ alert.source }}</td>
+                            <td class="alert-status">
+                                {% if alert.resolved %}
+                                <span class="badge badge-success">Resolved</span>
+                                {% elif alert.acknowledged %}
+                                <span class="badge badge-info">Acknowledged</span>
+                                {% else %}
+                                <span class="badge badge-error">New</span>
+                                {% endif %}
+                            </td>
+                            <td class="alert-actions">
+                                {% if not alert.resolved %}
+                                    {% if not alert.acknowledged %}
+                                    <button class="btn btn-sm btn-info acknowledge-alert" data-alert-id="{{ alert.id }}">Acknowledge</button>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-success resolve-alert" data-alert-id="{{ alert.id }}">Resolve</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No active alerts</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Alert History Tab -->
+<div id="history-tab" class="tab-content">
+    <div class="alerts-toolbar">
+        <div class="alert-filters">
+            <select id="history-severity-filter" class="form-control alert-history-filter">
+                <option value="all">All Severities</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+                <option value="critical">Critical</option>
+            </select>
+            
+            <select id="history-source-filter" class="form-control alert-history-filter">
+                <option value="all">All Sources</option>
+                <option value="syslog">Syslog</option>
+                <option value="snmp">SNMP</option>
+                <option value="netflow">NetFlow</option>
+                <option value="sflow">sFlow</option>
+                <option value="windows_events">Windows Events</option>
+                <option value="otel">OTEL</option>
+            </select>
+            
+            <input type="date" id="history-start-date" class="form-control" value="{{ today }}" max="{{ today }}">
+            <input type="date" id="history-end-date" class="form-control" value="{{ today }}" max="{{ today }}">
+            
+            <button id="apply-date-filter" class="btn btn-secondary">Apply</button>
+        </div>
+    </div>
+    
+    <!-- Alert History Visualization -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Alert Trend</h3>
+        </div>
+        <div class="card-body">
+            <div id="alert-trend-chart" style="height: 300px;"></div>
+        </div>
+    </div>
+    
+    <!-- Alert History List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Alert History</h3>
+        </div>
+        <div class="card-body">
+            <div class="alerts-list">
+                {% if alert_history %}
+                    {% for alert in alert_history %}
+                    <div class="alert-item {{ alert.severity|lower }}" 
+                         data-alert-id="{{ alert.id }}" 
+                         data-severity="{{ alert.severity|lower }}" 
+                         data-status="{{ 'resolved' if alert.resolved else 'acknowledged' if alert.acknowledged else 'new' }}" 
+                         data-source="{{ alert.source_type }}" 
+                         data-timestamp="{{ alert.timestamp }}">
+                        <div class="alert-header">
+                            <span class="badge badge-{{ alert.severity|lower }}">{{ alert.severity }}</span>
+                            <span class="alert-time">{{ alert.timestamp|format_datetime }}</span>
+                        </div>
+                        <div class="alert-message">{{ alert.message }}</div>
+                        <div class="alert-source">{{ alert.source }}</div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                {% if alert.resolved %}
+                                <span class="badge badge-success">Resolved on {{ alert.resolved_at|format_datetime }}</span>
+                                {% elif alert.acknowledged %}
+                                <span class="badge badge-info">Acknowledged on {{ alert.acknowledged_at|format_datetime }}</span>
+                                {% else %}
+                                <span class="badge badge-error">New</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if alert.alert_rule %}
+                                <small class="text-muted">Triggered by <strong>{{ alert.alert_rule.name }}</strong></small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state text-center">
+                        <p>No alert history available for the selected period</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Rules Tab -->
+<div id="rules-tab" class="tab-content">
+    <div class="alerts-toolbar">
+        <div class="alert-filters">
+            <select id="alert-rule-filter" class="form-control">
+                <option value="all">All Rules</option>
+                <option value="enabled">Enabled Only</option>
+                <option value="disabled">Disabled Only</option>
+            </select>
+            
+            <select id="alert-rule-sort" class="form-control">
+                <option value="name_asc">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="severity_desc">Severity (High-Low)</option>
+                <option value="severity_asc">Severity (Low-High)</option>
+                <option value="date_desc">Date (Newest)</option>
+                <option value="date_asc">Date (Oldest)</option>
+            </select>
+        </div>
+        
+        <button id="create-alert-rule" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Create Alert Rule
+        </button>
+    </div>
+    
+    <!-- Alert Rules Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table alert-rules-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Severity</th>
+                        <th>Data Source</th>
+                        <th>Description</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if alert_rules %}
+                        {% for rule in alert_rules %}
+                        <tr class="alert-rule-row {{ 'rule-enabled' if rule.enabled else '' }}">
+                            <td class="rule-name">{{ rule.name }}</td>
+                            <td class="rule-severity">
+                                <span class="badge badge-{{ rule.severity|lower }}">{{ rule.severity }}</span>
+                            </td>
+                            <td>{{ rule.data_source }}</td>
+                            <td>
+                                {{ rule.description or 'No description' }}
+                                <div class="conditions-display">{{ rule.condition }}</div>
+                                <div class="notification-channels">
+                                    {% for channel in rule.notification_channels %}
+                                    <span class="channel-badge">
+                                        {% if channel == 'email' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                            <polyline points="22,6 12,13 2,6"></polyline>
+                                        </svg>
+                                        Email
+                                        {% elif channel == 'slack' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"></path>
+                                            <path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"></path>
+                                            <path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"></path>
+                                            <path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"></path>
+                                            <path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"></path>
+                                            <path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"></path>
+                                            <path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"></path>
+                                            <path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"></path>
+                                        </svg>
+                                        Slack
+                                        {% elif channel == 'pagerduty' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"></path>
+                                        </svg>
+                                        PagerDuty
+                                        {% elif channel == 'webhook' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                        </svg>
+                                        Webhook
+                                        {% endif %}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td class="rule-date" data-date="{{ rule.created_at }}">{{ rule.created_at|format_datetime }}</td>
+                            <td>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="rule-{{ rule.id }}" class="alert-rule-status" data-rule-id="{{ rule.id }}" {{ 'checked' if rule.enabled else '' }}>
+                                    <label for="rule-{{ rule.id }}"></label>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary edit-rule" data-rule-id="{{ rule.id }}">Edit</button>
+                                <button class="btn btn-sm btn-danger delete-rule" data-rule-id="{{ rule.id }}">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No alert rules defined</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Settings Tab -->
+<div id="notifications-tab" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Notification Settings</h3>
+        </div>
+        <div class="card-body">
+            <!-- Email Notifications -->
+            <div class="form-group">
+                <h4>Email Notifications</h4>
+                <div class="form-check">
+                    <input type="checkbox" id="notify-email" class="form-check-input notification-toggle" {{ 'checked' if notification_settings.email else '' }}>
+                    <label for="notify-email" class="form-check-label">Enable email notifications</label>
+                </div>
+                
+                <div class="mt-3">
+                    <label for="email-recipients" class="form-label">Default Email Recipients</label>
+                    <input type="text" id="email-recipients" class="form-control" value="{{ notification_settings.email_recipients|join(', ') if notification_settings.email_recipients else '' }}" placeholder="email1@example.com, email2@example.com">
+                    <small class="text-muted">Comma-separated list of email addresses</small>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Slack Notifications -->
+            <div class="form-group">
+                <h4>Slack Notifications</h4>
+                <div class="form-check">
+                    <input type="checkbox" id="notify-slack" class="form-check-input notification-toggle" {{ 'checked' if notification_settings.slack else '' }}>
+                    <label for="notify-slack" class="form-check-label">Enable Slack notifications</label>
+                </div>
+                
+                <div class="mt-3">
+                    <label for="slack-webhook" class="form-label">Slack Webhook URL</label>
+                    <input type="text" id="slack-webhook" class="form-control" value="{{ notification_settings.slack_webhook }}" placeholder="https://hooks.slack.com/services/...">
+                </div>
+                
+                <div class="mt-3">
+                    <label for="slack-channel" class="form-label">Default Slack Channel</label>
+                    <input type="text" id="slack-channel" class="form-control" value="{{ notification_settings.slack_channel }}" placeholder="#alerts">
+                </div>
+            </div>
+            
+            <hr>
+            
+            <!-- PagerDuty Notifications -->
+            <div class="form-group">
+                <h4>PagerDuty Notifications</h4>
+                <div class="form-check">
+                    <input type="checkbox" id="notify-pagerduty" class="form-check-input notification-toggle" {{ 'checked' if notification_settings.pagerduty else '' }}>
+                    <label for="notify-pagerduty" class="form-check-label">Enable PagerDuty notifications</label>
+                </div>
+                
+                <div class="mt-3">
+                    <label for="pagerduty-key" class="form-label">PagerDuty Integration Key</label>
+                    <input type="text" id="pagerduty-key" class="form-control" value="{{ notification_settings.pagerduty_key }}" placeholder="PagerDuty integration key">
+                </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Webhook Notifications -->
+            <div class="form-group">
+                <h4>Webhook Notifications</h4>
+                <div class="form-check">
+                    <input type="checkbox" id="notify-webhook" class="form-check-input notification-toggle" {{ 'checked' if notification_settings.webhook else '' }}>
+                    <label for="notify-webhook" class="form-check-label">Enable webhook notifications</label>
+                </div>
+                
+                <div class="mt-3">
+                    <label for="webhook-url" class="form-label">Webhook URL</label>
+                    <input type="text" id="webhook-url" class="form-control" value="{{ notification_settings.webhook_url }}" placeholder="https://example.com/webhook">
+                </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Desktop Notifications -->
+            <div class="form-group">
+                <h4>Desktop Notifications</h4>
+                <div class="form-check">
+                    <input type="checkbox" id="notify-desktop" class="form-check-input notification-toggle" {{ 'checked' if notification_settings.desktop else '' }}>
+                    <label for="notify-desktop" class="form-check-label">Enable desktop notifications</label>
+                </div>
+                
+                <button id="enable-notifications" class="btn btn-secondary mt-3" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    Enable Browser Notifications
+                </button>
+            </div>
+            
+            <hr>
+            
+            <button id="save-notification-settings" class="btn btn-primary">Save Settings</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Include Chart.js for alert trend chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Include Date Range Picker -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Include Alert.js for alert functionality -->
+<script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Show corresponding content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+                
+                // Initialize chart if showing the history tab
+                if (tabId === 'history') {
+                    initAlertTrendChart();
+                }
+            });
+        });
+        
+        // Initialize alert trend chart
+        function initAlertTrendChart() {
+            const ctx = document.getElementById('alert-trend-chart');
+            if (!ctx) return;
+            
+            // Check if chart already exists
+            if (window.alertTrendChart) {
+                window.alertTrendChart.destroy();
+            }
+            
+            // Sample data - in a real implementation, this would be fetched from the server
+            const labels = Array.from({ length: 7 }, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - 6 + i);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            
+            const data = {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Critical',
+                        data: [0, 1, 0, 2, 0, 1, 0],
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--error-color'),
+                    },
+                    {
+                        label: 'Error',
+                        data: [2, 1, 3, 2, 1, 2, 1],
+                        backgroundColor: 'rgba(207, 102, 121, 0.7)',
+                    },
+                    {
+                        label: 'Warning',
+                        data: [5, 4, 7, 3, 4, 6, 4],
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--warning-color'),
+                    },
+                    {
+                        label: 'Info',
+                        data: [8, 7, 9, 6, 8, 7, 6],
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--info-color'),
+                    }
+                ]
+            };
+            
+            window.alertTrendChart = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--secondary-text')
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--secondary-text')
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--primary-text')
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initialize date range picker
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr('#alert-date-range', {
+                mode: 'range',
+                maxDate: 'today',
+                dateFormat: 'Y-m-d',
+                defaultDate: [new Date(new Date().setDate(new Date().getDate() - 7)), new Date()],
+                onChange: function(selectedDates) {
+                    if (selectedDates.length === 2) {
+                        filterAlertHistory();
+                    }
+                }
+            });
+            
+            // Initialize single date pickers for history tab
+            flatpickr('#history-start-date', {
+                maxDate: 'today',
+                dateFormat: 'Y-m-d',
+                defaultDate: new Date(new Date().setDate(new Date().getDate() - 7))
+            });
+            
+            flatpickr('#history-end-date', {
+                maxDate: 'today',
+                dateFormat: 'Y-m-d',
+                defaultDate: new Date()
+            });
+        }
+        
+        // Initialize notifications settings save
+        const saveNotificationsBtn = document.getElementById('save-notification-settings');
+        if (saveNotificationsBtn) {
+            saveNotificationsBtn.addEventListener('click', function() {
+                const settings = {
+                    email: document.getElementById('notify-email').checked,
+                    email_recipients: document.getElementById('email-recipients').value.split(',').map(s => s.trim()),
+                    slack: document.getElementById('notify-slack').checked,
+                    slack_webhook: document.getElementById('slack-webhook').value,
+                    slack_channel: document.getElementById('slack-channel').value,
+                    pagerduty: document.getElementById('notify-pagerduty').checked,
+                    pagerduty_key: document.getElementById('pagerduty-key').value,
+                    webhook: document.getElementById('notify-webhook').checked,
+                    webhook_url: document.getElementById('webhook-url').value,
+                    desktop: document.getElementById('notify-desktop').checked
+                };
+                
+                // Send to server
+                fetch('/api/alerts/notification-settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(settings),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to save notification settings');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    showNotification('Notification settings updated successfully', 'success');
+                })
+                .catch(error => {
+                    console.error('Error saving notification settings:', error);
+                    showNotification('Error saving notification settings', 'error');
+                });
+            });
+        }
+        
+        // Helper function to show notifications
+        function showNotification(message, type) {
+            // Check if notification container exists
+            let container = document.querySelector('.notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'notification-container';
+                container.style.position = 'fixed';
+                container.style.top = '20px';
+                container.style.right = '20px';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+            
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} fade-in`;
+            notification.innerHTML = `
+                ${message}
+                <button class="close-alert">&times;</button>
+            `;
+            
+            // Add notification to container
+            container.appendChild(notification);
+            
+            // Add close button event listener
+            notification.querySelector('.close-alert').addEventListener('click', () => {
+                notification.remove();
+            });
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

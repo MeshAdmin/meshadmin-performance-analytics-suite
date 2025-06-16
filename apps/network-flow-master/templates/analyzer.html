@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+
+{% block title %}Flow Analyzer - FlowVision{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-chart-bar me-2 icon-accent"></i>Flow Traffic Analyzer</h2>
+    
+    <!-- Device Selector -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-server me-2 icon-accent"></i>Select Device</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <label for="device-selector" class="form-label">Select Device:</label>
+                    <select id="device-selector" class="form-select">
+                        <option value="">All Devices</option>
+                        {% for device in devices %}
+                            <option value="{{ device.id }}" {% if request.args.get('device_id')|int == device.id %}selected{% endif %}>
+                                {{ device.name }} ({{ device.ip_address }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <button id="detect-anomalies" class="btn bg-accent me-2">
+                        <i class="fas fa-search"></i> Detect Anomalies
+                    </button>
+                    <button id="analyze-patterns" class="btn bg-accent">
+                        <i class="fas fa-chart-line"></i> Analyze Patterns
+                    <button id="view-ai-insights" class="btn btn-secondary me-2" disabled>
+                        <i class="fas fa-brain"></i> AI Insights
+                    </button>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Device Details (shown when a device is selected) -->
+    <div id="device-details">
+        <!-- This will be populated by JavaScript when a device is selected -->
+    </div>
+    
+    <!-- Flow Statistics -->
+    <div id="flow-statistics">
+        <!-- This will be populated by JavaScript -->
+    </div>
+    
+    <!-- AI Analysis Results -->
+    <div id="analysis-results" class="mt-4">
+        <!-- This will be populated when analysis is performed -->
+    </div>
+    
+    <!-- Time Series Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-chart-line me-2 icon-accent"></i>Traffic Over Time</h5>
+                <div class="d-flex align-items-center">
+                    <select id="metric-selector" class="form-select form-select-sm me-2" style="width: auto;">
+                        <option value="bytes">Bytes</option>
+                        <option value="packets">Packets</option>
+                        <option value="flows">Flow Count</option>
+                    </select>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm time-period-btn active" data-period="hour">Hour</button>
+                        <button type="button" class="btn btn-sm time-period-btn" data-period="day">Day</button>
+                        <button type="button" class="btn btn-sm time-period-btn" data-period="week">Week</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="height: 300px;">
+                <canvas id="time-series-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter me-2 icon-accent"></i>Filter Flows</h5>
+        </div>
+        <div class="card-body">
+            <form id="filter-form">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="src_ip" class="form-label">Source IP</label>
+                        <input type="text" class="form-control" id="src_ip" name="src_ip">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="dst_ip" class="form-label">Destination IP</label>
+                        <input type="text" class="form-control" id="dst_ip" name="dst_ip">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="protocol" class="form-label">Protocol</label>
+                        <select class="form-select" id="protocol" name="protocol">
+                            <option value="">Any</option>
+                            <option value="6">TCP</option>
+                            <option value="17">UDP</option>
+                            <option value="1">ICMP</option>
+                            <option value="47">GRE</option>
+                            <option value="50">ESP</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="flow_type" class="form-label">Flow Type</label>
+                        <select class="form-select" id="flow_type" name="flow_type">
+                            <option value="">Any</option>
+                            <option value="netflow">NetFlow</option>
+                            <option value="sflow">sFlow</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="limit" class="form-label">Limit</label>
+                        <select class="form-select" id="limit" name="limit">
+                            <option value="100">100</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                            <option value="5000">5000</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn bg-accent">
+                        <i class="fas fa-filter me-1"></i>Apply Filters
+                    </button>
+                    <button type="button" id="clear-filters" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Flow Data Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-table me-2 icon-accent"></i>Flow Data</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover flow-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Source IP</th>
+                        <th>Source Port</th>
+                        <th>Destination IP</th>
+                        <th>Destination Port</th>
+                        <th>Protocol</th>
+                        <th>Bytes</th>
+                        <th>Packets</th>
+                    </tr>
+                </thead>
+                <tbody id="flow-table-body">
+                    <tr>
+                        <td colspan="8" class="text-center">Loading flow data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="loading-overlay d-none">
+        <div class="spinner-border loading-spinner" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analyzer.js') }}"></script>
+{% endblock %}

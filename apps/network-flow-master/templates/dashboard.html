@@ -1,0 +1,305 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - FlowVision{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <i class="fas fa-tachometer-alt me-2"></i> Flow Traffic Dashboard
+</div>
+
+<!-- Loading Indicator -->
+<div id="loading-indicator" class="loading-overlay" style="display: none;">
+    <div class="spinner-border loading-spinner" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- Overview Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <h1 id="total-flows">{{ stats.total_flows }}</h1>
+                <p class="mb-0">Total Flows</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <h1 id="netflow-count">{{ stats.netflow_count }}</h1>
+                <p class="mb-0">NetFlow Records</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <h1 id="sflow-count">{{ stats.sflow_count }}</h1>
+                <p class="mb-0">sFlow Records</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <h1 id="device-count">{{ stats.devices }}</h1>
+                <p class="mb-0">Connected Devices</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Time Period Selector -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Flow Traffic Overview</h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm time-period-selector active" data-period="hour">Last Hour</button>
+                        <button type="button" class="btn btn-sm time-period-selector" data-period="day">Last 24 Hours</button>
+                        <button type="button" class="btn btn-sm time-period-selector" data-period="week">Last Week</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line me-2 icon-accent"></i> Flow Traffic Rate</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;" class="chart-container">
+                    <canvas id="flow-rate-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie me-2 icon-accent"></i> Protocol Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;" class="chart-container">
+                    <canvas id="protocol-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Row -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-upload me-2 icon-accent"></i> Top Source IPs</h5>
+            </div>
+            <ul id="top-sources" class="list-group list-group-flush">
+                {% if stats.top_source_ips %}
+                    {% for ip, count in stats.top_source_ips.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ ip }}
+                            <span class="badge rounded-pill bg-accent">{{ count }}</span>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="list-group-item">No data available</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-download me-2 icon-accent"></i> Top Destination IPs</h5>
+            </div>
+            <ul id="top-destinations" class="list-group list-group-flush">
+                {% if stats.top_destination_ips %}
+                    {% for ip, count in stats.top_destination_ips.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ ip }}
+                            <span class="badge rounded-pill bg-accent">{{ count }}</span>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="list-group-item">No data available</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-network-wired me-2 icon-accent"></i> Connected Devices</h5>
+                <a href="/analyzer" class="btn btn-sm bg-accent">
+                    <i class="fas fa-chart-bar me-1"></i> Analyze
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Device</th>
+                            <th>IP Address</th>
+                            <th>Flow Type</th>
+                            <th>Last Seen</th>
+                            <th>Flows</th>
+                        </tr>
+                    </thead>
+                    <tbody id="device-table-body">
+                        {% if stats.recent_devices %}
+                            {% for device in stats.recent_devices %}
+                                <tr>
+                                    <td>
+                                        <a href="/analyzer?device_id={{ device.id }}">
+                                            {{ device.name or device.ip_address }}
+                                        </a>
+                                    </td>
+                                    <td>{{ device.ip_address }}</td>
+                                    <td>{{ device.flow_type }}</td>
+                                    <td>{{ device.last_seen.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ device.flow_count }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No devices discovered</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- AI Insights - Anomaly Detection -->
+<div class="card mt-4" id="recent-anomalies-container">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="fas fa-brain me-2 icon-accent"></i> AI Insights - Anomaly Detection</h5>
+        <a href="/analyzer" class="btn btn-sm bg-accent">
+            <i class="fas fa-chart-line me-1"></i> Advanced Analysis
+        </a>
+    </div>
+    
+    <!-- Loading indicator -->
+    <div id="recent-anomalies-loading" class="text-center p-4" style="display: none;">
+        <div class="spinner-border text-accent" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Analyzing network traffic patterns...</p>
+    </div>
+    
+    <!-- Error container -->
+    <div id="recent-anomalies-error" class="alert alert-danger m-3" style="display: none;">
+        Unable to load anomaly data.
+    </div>
+    
+    <!-- Content -->
+    <div id="recent-anomalies-content">
+        <div class="card-body pb-0">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <span class="display-5 text-accent"><i class="fas fa-exclamation-triangle"></i></span>
+                        </div>
+                        <div>
+                            <h4 class="mb-0"><span id="recent-anomalies-count">0</span> Anomalies Detected</h4>
+                            <p class="text-muted mb-0">AI-powered anomaly detection</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle text-accent me-2"></i>
+                        AI algorithms continuously analyze traffic patterns to detect unusual behavior that may 
+                        indicate security threats, network issues, or performance problems.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Device</th>
+                        <th>Time</th>
+                        <th>Communication</th>
+                        <th>Anomaly Type</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-anomalies-table-body">
+                    <tr>
+                        <td colspan="5" class="text-center">No anomalies detected</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Load required chart and AI insights scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0"></script>
+<script src="{{ url_for('static', filename='js/ai_insights.js') }}"></script>
+
+<!-- Recent Flows -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5><i class="fas fa-stream me-2 icon-accent"></i> Recent Flows</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover flow-table mb-0">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Source</th>
+                    <th>Destination</th>
+                    <th>Protocol</th>
+                    <th>Bytes</th>
+                    <th>Packets</th>
+                    <th>Flow Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if stats.recent_flows %}
+                    {% for flow in stats.recent_flows %}
+                        <tr>
+                            <td>{{ flow.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ flow.src_ip }}{% if flow.src_port %}:{{ flow.src_port }}{% endif %}</td>
+                            <td>{{ flow.dst_ip }}{% if flow.dst_port %}:{{ flow.dst_port }}{% endif %}</td>
+                            <td>
+                                {% set protocol_names = {6: 'TCP', 17: 'UDP', 1: 'ICMP', 47: 'GRE', 50: 'ESP', 89: 'OSPF'} %}
+                                {% set protocol_name = protocol_names[flow.protocol] if flow.protocol in protocol_names else flow.protocol %}
+                                {% set badge_class = 'badge-' + protocol_names[flow.protocol].lower() if flow.protocol in protocol_names else 'badge-other' %}
+                                <span class="badge {{ badge_class }}">{{ protocol_name }}</span>
+                            </td>
+                            <td>{{ flow.bytes }}</td>
+                            <td>{{ flow.packets }}</td>
+                            <td>{{ flow.flow_type }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">No flow data available</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

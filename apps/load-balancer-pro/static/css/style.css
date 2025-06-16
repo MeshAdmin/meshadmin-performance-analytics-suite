@@ -1,0 +1,456 @@
+/* Python Load Balancer - Main Stylesheet */
+
+/* Base styles */
+:root {
+    --primary-color: #1976D2;
+    --primary-light: #42A5F5;
+    --primary-dark: #0D47A1;
+    --success-color: #388E3C;
+    --success-light: #81C784;
+    --warning-color: #FFA000;
+    --warning-light: #FFD54F;
+    --danger-color: #D32F2F;
+    --danger-light: #E57373;
+    --text-color: #212121;
+    --text-secondary: #757575;
+    --border-color: #E0E0E0;
+    --background-color: #FFFFFF;
+    --card-background: #FFFFFF;
+    --hover-background: #F5F5F5;
+}
+
+/* Dark mode variables */
+.dark-mode {
+    --primary-color: #42A5F5;
+    --primary-light: #90CAF9;
+    --primary-dark: #1976D2;
+    --success-color: #4CAF50;
+    --success-light: #A5D6A7;
+    --warning-color: #FFC107;
+    --warning-light: #FFE082;
+    --danger-color: #F44336;
+    --danger-light: #EF9A9A;
+    --text-color: #FFFFFF;
+    --text-secondary: #CCCCCC;
+    --border-color: #424242;
+    --background-color: #121212;
+    --card-background: #1E1E1E;
+    --hover-background: #2C2C2C;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    transition: background-color 0.3s ease;
+}
+
+/* Logo */
+.logo {
+    height: 36px;
+    vertical-align: middle;
+}
+
+/* Status indicator */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.status-running {
+    background-color: var(--success-light);
+    color: var(--success-color);
+}
+
+.status-stopped {
+    background-color: var(--danger-light);
+    color: var(--danger-color);
+}
+
+/* Cards styling */
+.card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-background);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: var(--card-background);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+    font-weight: 600;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Stats dashboard */
+.stats-dashboard {
+    margin-bottom: 1.5rem;
+}
+
+.stats-card {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.stats-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Tables */
+.table {
+    color: var(--text-color);
+}
+
+.table thead th {
+    border-bottom-width: 1px;
+    background-color: rgba(0, 0, 0, 0.02);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--hover-background);
+}
+
+/* Active connection styling with enhanced contrast that persists on hover */
+.active-connection {
+    background-color: rgba(25, 118, 210, 0.2);
+    position: relative;
+}
+
+.active-connection::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: var(--primary-color);
+}
+
+.dark-mode .active-connection {
+    background-color: rgba(66, 165, 245, 0.15);
+}
+
+.dark-mode .active-connection::before {
+    background-color: var(--primary-light);
+}
+
+/* Keep highlighting on hover */
+.table-hover tbody tr.active-connection:hover {
+    background-color: rgba(25, 118, 210, 0.25) !important;
+}
+
+.dark-mode .table-hover tbody tr.active-connection:hover {
+    background-color: rgba(66, 165, 245, 0.25) !important;
+}
+
+/* Form styling */
+.form-control, .form-select {
+    border-color: var(--border-color);
+    color: var(--text-color);
+    background-color: var(--card-background);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.1);
+}
+
+.dark-mode .form-control, .dark-mode .form-select {
+    background-color: #2C2C2C;
+    color: #FFFFFF;
+    border-color: #555555;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-success:hover, .btn-success:focus {
+    background-color: #2E7D32;
+    border-color: #2E7D32;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover, .btn-danger:focus {
+    background-color: #C62828;
+    border-color: #C62828;
+}
+
+.btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.btn-outline-secondary:hover, 
+.btn-outline-secondary:focus, 
+.btn-outline-secondary.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.dark-mode .btn-outline-secondary {
+    color: #B0B0B0;
+    border-color: #555555;
+}
+
+.dark-mode .btn-outline-secondary:hover, 
+.dark-mode .btn-outline-secondary:focus, 
+.dark-mode .btn-outline-secondary.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* Network Topology */
+.network-topology-svg {
+    background-color: var(--card-background);
+}
+
+.dark-mode .network-topology-svg {
+    background-color: #323232;
+}
+
+/* Tooltip styles */
+.topology-tooltip {
+    position: absolute;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 1000;
+    max-width: 300px;
+    transition: opacity 0.2s ease;
+}
+
+.server-tooltip {
+    position: absolute;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 1000;
+    max-width: 320px;
+    transition: opacity 0.2s ease;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+    .stats-dashboard .col-sm-3 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Dark mode switches */
+.nav-tabs .nav-link {
+    color: var(--text-color);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    background-color: var(--card-background);
+    border-color: var(--border-color) var(--border-color) var(--card-background);
+}
+
+/* Analytics dashboard */
+#analytics-dashboard, #health-plot {
+    width: 100%;
+    background-color: var(--card-background);
+}
+
+/* Badge colors */
+.badge.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--danger-color) !important;
+}
+
+.badge.bg-warning {
+    background-color: var(--warning-color) !important;
+}
+
+.badge.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+/* Log level slider */
+.form-range::-webkit-slider-thumb {
+    background-color: var(--primary-color);
+}
+
+.form-range::-moz-range-thumb {
+    background-color: var(--primary-color);
+}
+
+.form-range::-ms-thumb {
+    background-color: var(--primary-color);
+}
+
+/* Log level labels */
+.log-level-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+}
+
+.log-level-labels small {
+    font-size: 0.7rem;
+    text-align: center;
+    padding: 0 2px;
+}
+
+/* Network Topology Visualization */
+.node {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    stroke: #ffffff;
+    stroke-opacity: 0.6;
+    stroke-width: 1.5;
+}
+
+.node:hover {
+    filter: brightness(1.2);
+    stroke-width: 2.5;
+    stroke-opacity: 0.9;
+}
+
+.node-loadbalancer {
+    filter: drop-shadow(0 0 4px rgba(65, 165, 245, 0.7));
+}
+
+.node-backend {
+    filter: drop-shadow(0 0 3px rgba(102, 187, 106, 0.5));
+}
+
+.dark-mode .node-loadbalancer {
+    filter: drop-shadow(0 0 6px rgba(65, 165, 245, 0.8));
+}
+
+.dark-mode .node-backend {
+    filter: drop-shadow(0 0 5px rgba(102, 187, 106, 0.6));
+}
+
+.node-label {
+    pointer-events: none;
+    user-select: none;
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.dark-mode .node-label {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.link {
+    stroke-linecap: round;
+    transition: all 0.3s ease;
+}
+
+.direct-link {
+    stroke-dasharray: 1, 2;
+    opacity: 0.3;
+}
+
+.node-pulse {
+    filter: blur(1px);
+}
+
+/* Animation effects for data flow */
+@keyframes dataFlow {
+    0% {
+        stroke-dashoffset: 24;
+    }
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.4;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+.data-flow {
+    stroke-dasharray: 4, 2;
+    animation: dataFlow 1s linear infinite;
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}

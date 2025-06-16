@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+
+{% block title %}Device Inventory - MASH{% endblock %}
+
+{% block page_title %}Device Inventory{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/customers.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-actions">
+        <h2>Device Inventory</h2>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="showCreateDeviceModal()">
+                <i class="fas fa-plus"></i> Add Device
+            </button>
+        </div>
+    </div>
+    
+    {% if devices %}
+    <div class="filter-bar">
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input type="text" id="device-search-global" placeholder="Search devices..." oninput="filterDevicesGlobal()">
+        </div>
+        
+        <div class="filter-options">
+            <label>Organization:</label>
+            <select id="filter-organization" class="form-control" onchange="filterDevicesGlobal()">
+                <option value="">All Organizations</option>
+                {% for org in organizations %}
+                <option value="{{ org.id }}">{{ org.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-options">
+            <label>Site:</label>
+            <select id="filter-site" class="form-control" onchange="filterDevicesGlobal()">
+                <option value="">All Sites</option>
+                {% for site in sites %}
+                <option value="{{ site.id }}" data-org-id="{{ site.organization_id }}">{{ site.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-options">
+            <label>Device Type:</label>
+            <select id="filter-device-type" class="form-control" onchange="filterDevicesGlobal()">
+                <option value="">All Types</option>
+                <option value="Router">Routers</option>
+                <option value="Switch">Switches</option>
+                <option value="Firewall">Firewalls</option>
+                <option value="Server">Servers</option>
+                <option value="Workstation">Workstations</option>
+                <option value="IoT Device">IoT Devices</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        
+        <div class="sort-options">
+            <label for="sort-devices">Sort By:</label>
+            <select id="sort-devices" class="form-control" onchange="sortDevicesGlobal()">
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="created-desc">Newest First</option>
+                <option value="created-asc">Oldest First</option>
+            </select>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="content-card">
+    {% if devices %}
+    <div class="inventory-summary">
+        <div class="summary-item">
+            <h4>Total Devices</h4>
+            <span class="count">{{ devices|length }}</span>
+        </div>
+        <div class="summary-item">
+            <h4>Online</h4>
+            <span class="count success">{{ devices|length }}</span>
+        </div>
+        <div class="summary-item">
+            <h4>Servers</h4>
+            <span class="count">{{ devices|selectattr('device_type', 'equalto', 'Server')|list|length }}</span>
+        </div>
+        <div class="summary-item">
+            <h4>Network Devices</h4>
+            <span class="count">{{ devices|selectattr('device_type', 'in', ['Router', 'Switch', 'Firewall'])|list|length }}</span>
+        </div>
+        <div class="summary-item">
+            <h4>Endpoints</h4>
+            <span class="count">{{ devices|selectattr('device_type', 'equalto', 'Workstation')|list|length }}</span>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table" id="devices-table-global">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>IP Address</th>
+                    <th>Type</th>
+                    <th>OS</th>
+                    <th>Site</th>
+                    <th>Organization</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for device in devices %}
+                <tr data-device-id="{{ device.id }}" data-site-id="{{ device.site_id }}" data-org-id="{{ device.site.organization_id }}" data-device-type="{{ device.device_type or '' }}">
+                    <td>{{ device.name }}</td>
+                    <td>{{ device.ip_address }}</td>
+                    <td>{{ device.device_type or 'N/A' }}</td>
+                    <td>{{ device.os_type }}{% if device.os_version %} {{ device.os_version }}{% endif %}</td>
+                    <td>
+                        <a href="{{ url_for('customers.site_details', site_id=device.site.id) }}">
+                            {{ device.site.name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('customers.organization_details', org_id=device.site.organization.id) }}">
+                            {{ device.site.organization.name }}
+                        </a>
+                    </td>
+                    <td><span class="badge badge-success">Online</span></td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('customers.device_details', device_id=device.id) }}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-secondary" onclick="editDevice({{ device.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="configureMonitoring({{ device.id }})">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-server"></i>
+        </div>
+        <h3>No Devices</h3>
+        <p>You don't have any devices in your inventory yet.</p>
+        <button class="btn btn-primary" onclick="showCreateDeviceModal()">
+            <i class="fas fa-plus"></i> Add Device
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<div class="content-cards mt-4">
+    <div class="card-header">
+        <h3>Device Type Distribution</h3>
+    </div>
+    <div class="card-grid">
+        <div class="content-card">
+            <div class="chart-container" style="height: 300px;">
+                <canvas id="device-type-chart"></canvas>
+            </div>
+        </div>
+        <div class="content-card">
+            <div class="chart-container" style="height: 300px;">
+                <canvas id="os-distribution-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Device Modal -->
+<div class="modal" id="device-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="device-modal-title">Add Device</h3>
+            <button class="modal-close" onclick="closeModal('device-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="device-form">
+                <input type="hidden" id="device-id" value="">
+                <div class="form-group">
+                    <label for="device-site">Site</label>
+                    <select id="device-site" class="form-control" required>
+                        <option value="">Select Site</option>
+                        {% for site in sites %}
+                        <option value="{{ site.id }}" data-org-id="{{ site.organization_id }}">{{ site.name }} ({{ site.organization.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="device-name">Device Name</label>
+                    <input type="text" id="device-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="device-ip">IP Address</label>
+                    <input type="text" id="device-ip" class="form-control" required pattern="^([0-9]{1,3}\.){3}[0-9]{1,3}$" placeholder="e.g. 192.168.1.1">
+                </div>
+                <div class="form-group">
+                    <label for="device-type">Device Type</label>
+                    <select id="device-type" class="form-control">
+                        <option value="">Select Type</option>
+                        <option value="Router">Router</option>
+                        <option value="Switch">Switch</option>
+                        <option value="Firewall">Firewall</option>
+                        <option value="Server">Server</option>
+                        <option value="Workstation">Workstation</option>
+                        <option value="IoT Device">IoT Device</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="device-os-type">Operating System</label>
+                    <select id="device-os-type" class="form-control">
+                        <option value="">Select OS</option>
+                        <option value="Windows">Windows</option>
+                        <option value="Linux">Linux</option>
+                        <option value="macOS">macOS</option>
+                        <option value="Cisco IOS">Cisco IOS</option>
+                        <option value="FortiOS">FortiOS</option>
+                        <option value="pfSense">pfSense</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="device-os-version">OS Version</label>
+                    <input type="text" id="device-os-version" class="form-control" placeholder="e.g. 10, 22.04, etc.">
+                </div>
+                <div class="form-group">
+                    <label for="device-description">Description</label>
+                    <textarea id="device-description" class="form-control" rows="3"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('device-modal')">Cancel</button>
+            <button class="btn btn-primary" id="save-device-btn" onclick="saveDevice()">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Configure Monitoring Modal -->
+<div class="modal" id="monitoring-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Configure Monitoring</h3>
+            <button class="modal-close" onclick="closeModal('monitoring-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="monitoring-form">
+                <input type="hidden" id="monitoring-device-id" value="">
+                <div class="form-group">
+                    <label>Monitoring Services</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="monitor-syslog" checked>
+                            Syslog
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="monitor-snmp" checked>
+                            SNMP Traps
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="monitor-netflow">
+                            NetFlow
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="monitor-sflow">
+                            sFlow
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="monitor-windows-events">
+                            Windows Events
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="monitor-otel">
+                            OpenTelemetry
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="netflow-settings" style="display: none;">
+                    <label>NetFlow Configuration</label>
+                    <div class="input-group">
+                        <label for="netflow-port">Port</label>
+                        <input type="number" id="netflow-port" class="form-control" value="2055">
+                    </div>
+                    <div class="input-group">
+                        <label for="netflow-version">Version</label>
+                        <select id="netflow-version" class="form-control">
+                            <option value="5">NetFlow v5</option>
+                            <option value="9" selected>NetFlow v9</option>
+                            <option value="10">IPFIX (NetFlow v10)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="sflow-settings" style="display: none;">
+                    <label>sFlow Configuration</label>
+                    <div class="input-group">
+                        <label for="sflow-port">Port</label>
+                        <input type="number" id="sflow-port" class="form-control" value="6343">
+                    </div>
+                </div>
+                
+                <div class="form-group" id="otel-settings" style="display: none;">
+                    <label>OpenTelemetry Configuration</label>
+                    <div class="input-group">
+                        <label for="otel-port">gRPC Port</label>
+                        <input type="number" id="otel-port" class="form-control" value="4317">
+                    </div>
+                    <div class="input-group">
+                        <label for="otel-protocol">Protocol</label>
+                        <select id="otel-protocol" class="form-control">
+                            <option value="grpc" selected>gRPC</option>
+                            <option value="http">HTTP</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('monitoring-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveMonitoringConfig()">Save Configuration</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the device type distribution chart
+    initDeviceTypeChart();
+    
+    // Initialize the OS distribution chart
+    initOSDistributionChart();
+    
+    // Set up the site filter to update based on selected organization
+    const orgFilter = document.getElementById('filter-organization');
+    const siteFilter = document.getElementById('filter-site');
+    
+    if (orgFilter && siteFilter) {
+        orgFilter.addEventListener('change', function() {
+            const selectedOrgId = this.value;
+            
+            // Reset site filter
+            siteFilter.innerHTML = '<option value="">All Sites</option>';
+            
+            // Get all site options
+            const siteOptions = document.querySelectorAll('#filter-site option[data-org-id]');
+            
+            // If no organization selected, show all sites
+            if (!selectedOrgId) {
+                siteOptions.forEach(option => {
+                    siteFilter.appendChild(option.cloneNode(true));
+                });
+                return;
+            }
+            
+            // Filter sites by organization
+            siteOptions.forEach(option => {
+                const optionOrgId = option.getAttribute('data-org-id');
+                if (optionOrgId === selectedOrgId) {
+                    siteFilter.appendChild(option.cloneNode(true));
+                }
+            });
+        });
+    }
+});
+
+function initDeviceTypeChart() {
+    // Get device type counts
+    const deviceTypes = {};
+    const rows = document.querySelectorAll('#devices-table-global tbody tr');
+    
+    rows.forEach(row => {
+        const type = row.getAttribute('data-device-type') || 'Unknown';
+        deviceTypes[type] = (deviceTypes[type] || 0) + 1;
+    });
+    
+    const labels = Object.keys(deviceTypes);
+    const data = Object.values(deviceTypes);
+    const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+        '#9966FF', '#FF9F40', '#C9CBCF', '#7CFC00'
+    ];
+    
+    const ctx = document.getElementById('device-type-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, data.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: {
+                position: 'right',
+                labels: {
+                    fontColor: '#f0f0f0'
+                }
+            }
+        }
+    });
+}
+
+function initOSDistributionChart() {
+    // Get OS distribution
+    const osTypes = {};
+    const rows = document.querySelectorAll('#devices-table-global tbody tr');
+    
+    rows.forEach(row => {
+        const osCell = row.cells[3].textContent.trim();
+        const osType = osCell || 'Unknown';
+        osTypes[osType] = (osTypes[osType] || 0) + 1;
+    });
+    
+    const labels = Object.keys(osTypes);
+    const data = Object.values(osTypes);
+    const colors = [
+        '#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', 
+        '#9966FF', '#FF9F40', '#C9CBCF', '#7CFC00'
+    ];
+    
+    const ctx = document.getElementById('os-distribution-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, data.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: {
+                position: 'right',
+                labels: {
+                    fontColor: '#f0f0f0'
+                }
+            }
+        }
+    });
+}
+
+function filterDevicesGlobal() {
+    const searchText = document.getElementById('device-search-global').value.toLowerCase();
+    const orgFilter = document.getElementById('filter-organization').value;
+    const siteFilter = document.getElementById('filter-site').value;
+    const typeFilter = document.getElementById('filter-device-type').value;
+    
+    const deviceRows = document.querySelectorAll('#devices-table-global tbody tr');
+    
+    deviceRows.forEach(function(row) {
+        const name = row.cells[0].textContent.toLowerCase();
+        const ip = row.cells[1].textContent.toLowerCase();
+        const type = row.getAttribute('data-device-type');
+        const siteId = row.getAttribute('data-site-id');
+        const orgId = row.getAttribute('data-org-id');
+        
+        const matchesSearch = name.includes(searchText) || 
+                             ip.includes(searchText);
+        const matchesOrgFilter = !orgFilter || orgId === orgFilter;
+        const matchesSiteFilter = !siteFilter || siteId === siteFilter;
+        const matchesTypeFilter = !typeFilter || type === typeFilter;
+        
+        row.style.display = (matchesSearch && matchesOrgFilter && 
+                            matchesSiteFilter && matchesTypeFilter) ? 
+                            'table-row' : 'none';
+    });
+    
+    // Update charts after filtering
+    initDeviceTypeChart();
+    initOSDistributionChart();
+}
+
+function sortDevicesGlobal() {
+    const sortValue = document.getElementById('sort-devices').value;
+    const [property, direction] = sortValue.split('-');
+    
+    const table = document.getElementById('devices-table-global');
+    if (!table) return;
+    
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    
+    rows.sort(function(a, b) {
+        let valueA, valueB;
+        
+        if (property === 'name') {
+            valueA = a.cells[0].textContent.trim().toLowerCase();
+            valueB = b.cells[0].textContent.trim().toLowerCase();
+        } else if (property === 'created') {
+            // Fallback to name if created date is not available
+            valueA = a.getAttribute('data-created') || a.cells[0].textContent.trim().toLowerCase();
+            valueB = b.getAttribute('data-created') || b.cells[0].textContent.trim().toLowerCase();
+        }
+        
+        if (direction === 'asc') {
+            return valueA > valueB ? 1 : -1;
+        } else {
+            return valueA < valueB ? 1 : -1;
+        }
+    });
+    
+    // Remove existing rows
+    rows.forEach(row => row.parentNode.removeChild(row));
+    
+    // Add sorted rows
+    const tbody = table.querySelector('tbody');
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+{% endblock %}
