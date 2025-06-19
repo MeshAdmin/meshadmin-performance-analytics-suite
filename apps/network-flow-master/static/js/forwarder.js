@@ -117,7 +117,11 @@ function toggleForwardTarget(targetId, button) {
     })
     .catch(error => {
         console.error('Error toggling forward target:', error);
-        showError('Failed to toggle target');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to toggle target');
+        } else {
+            showError('Failed to toggle target');
+        }
         button.disabled = false;
     });
 }
@@ -142,6 +146,9 @@ function loadForwarderStats() {
         })
         .catch(error => {
             console.error('Error loading forwarder stats:', error);
+            if (typeof notify !== 'undefined') {
+                notify('error', 'Failed to load forwarder statistics');
+            }
         });
 }
 
@@ -284,7 +291,11 @@ function deleteForwardTarget(targetId) {
     })
     .catch(error => {
         console.error('Error deleting forward target:', error);
-        showError('Failed to delete forward target');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to delete forward target');
+        } else {
+            showError('Failed to delete forward target');
+        }
     });
 }
 

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification System Example</title>
+    
+    <!-- Include FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Include the existing notification styles -->
+    <style>
+        /* Copy styles from your existing styles.css */
+        #notification-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .notification {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            padding: 15px;
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease ease-in;
+            border-left: 4px solid;
+            color: #f0f0f0;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .notification-success {
+            border-left-color: #4caf50;
+        }
+
+        .notification-error {
+            border-left-color: #cf6679;
+        }
+
+        .notification-warning {
+            border-left-color: #ff9800;
+        }
+
+        .notification-info {
+            border-left-color: #2196f3;
+        }
+
+        .notification-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            color: #aaaaaa;
+        }
+
+        .notification-content {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: #aaaaaa;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .notification-close:hover {
+            color: #ffffff;
+        }
+
+        .notification-hide {
+            animation: slideOut 0.3s ease ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Demo page styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            padding: 40px;
+        }
+
+        .demo-section {
+            margin-bottom: 30px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-success { background-color: #4caf50; color: white; }
+        .btn-error { background-color: #cf6679; color: white; }
+        .btn-warning { background-color: #ff9800; color: white; }
+        .btn-info { background-color: #2196f3; color: white; }
+        .btn-clear { background-color: #666; color: white; }
+    </style>
+</head>
+<body>
+    <h1>MASH Notification System Demo</h1>
+    
+    <div class="demo-section">
+        <h2>Basic Notifications</h2>
+        <button class="btn-success" onclick="notify('success', 'Operation completed successfully!')">Success</button>
+        <button class="btn-error" onclick="notify('error', 'An error occurred while processing your request.')">Error</button>
+        <button class="btn-warning" onclick="notify('warning', 'This action requires confirmation.')">Warning</button>
+        <button class="btn-info" onclick="notify('info', 'New update available.')">Info</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Convenience Functions</h2>
+        <button class="btn-success" onclick="notifications.success('File uploaded successfully!')">Success Helper</button>
+        <button class="btn-error" onclick="notifications.error('Failed to connect to server.')">Error Helper</button>
+        <button class="btn-warning" onclick="notifications.warning('Session will expire in 5 minutes.')">Warning Helper</button>
+        <button class="btn-info" onclick="notifications.info('Check out our new features!')">Info Helper</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Custom Options</h2>
+        <button class="btn-info" onclick="notify('info', 'This notification will disappear in 2 seconds.', {duration: 2000})">Short Duration (2s)</button>
+        <button class="btn-warning" onclick="notify('warning', 'This notification stays until closed.', {duration: 0})">No Auto-hide</button>
+        <button class="btn-error" onclick="notify('error', 'This notification cannot be closed manually.', {closable: false})">Not Closable</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Legacy Compatibility</h2>
+        <button class="btn-success" onclick="showNotification('Legacy function still works!', 'success')">Legacy showNotification</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Actions</h2>
+        <button class="btn-clear" onclick="clearAllNotifications()">Clear All Notifications</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Error Handling Example</h2>
+        <button class="btn-error" onclick="simulateApiError()">Simulate API Error</button>
+    </div>
+
+    <script>
+        // Simulate a typical fetch error that would use notifications
+        function simulateApiError() {
+            // Simulate a fetch request that fails
+            Promise.reject(new Error('Network connection failed'))
+                .catch(error => {
+                    console.error('API Error:', error);
+                    
+                    // Use the notification system to show the error
+                    if (typeof notify !== 'undefined') {
+                        notify('error', `Request failed: ${error.message}`);
+                    } else {
+                        console.error('Notification system not available:', error.message);
+                    }
+                });
+        }
+    </script>
+
+    <!-- Include the central notification system -->
+    <script src="js/notifications.js"></script>
+</body>
+</html>
+

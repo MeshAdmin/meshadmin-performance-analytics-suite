@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Progress Test</title>
+    <link rel="stylesheet" href="static/css/llm-progress.css">
+    <style>
+        :root {
+            --primary-bg: #000000;
+            --secondary-bg: #1a1a1a;
+            --card-bg: #1a1a1a;
+            --bg-color: #000000;
+            --primary-text: #ffffff;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #3d3d3d;
+            --accent-color: #8B0000;
+            --accent-color-light: #C50000;
+            --success-color: #00b894;
+            --warning-color: #fdcb6e;
+            --error-color: #e84393;
+            --critical-color: #d63031;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .model-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .model-name {
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .model-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        
+        .model-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .model-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s ease;
+        }
+        
+        .model-btn:hover {
+            background: var(--accent-color-light);
+        }
+        
+        .model-btn.success {
+            background: var(--success-color);
+        }
+        
+        .model-btn.danger {
+            background: var(--critical-color);
+        }
+        
+        .test-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-btn:hover {
+            background: var(--accent-color-light);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 LLM Progress UI Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button class="test-btn" onclick="testLoadingProgress()">🔄 Test Loading Progress</button>
+            <button class="test-btn" onclick="testSuccessToast()">✅ Test Success Toast</button>
+            <button class="test-btn" onclick="testErrorToast()">❌ Test Error Toast</button>
+            <button class="test-btn" onclick="testSpinner()">⏳ Test Spinner</button>
+            <button class="test-btn" onclick="llmManager.setSseEnabled(false)">🚫 Disable SSE</button>
+            <button class="test-btn" onclick="llmManager.setSseEnabled(true)">✅ Enable SSE</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Model Cards (Test)</h2>
+            <div class="model-grid">
+                <div class="model-card" data-model-id="test_model_1">
+                    <div class="model-name">test-model-7b.gguf</div>
+                    <div class="model-info">
+                        Size: 4.2 GB | Format: GGUF
+                        <span class="status-badge status-available">Available</span>
+                    </div>
+                    <div class="model-actions">
+                        <button class="model-btn success" onclick="testModelLoad('test-model-7b.gguf')">📥 Load</button>
+                        <button class="model-btn danger">🗑️ Delete</button>
+                    </div>
+                </div>
+                
+                <div class="model-card" data-model-id="test_model_2">
+                    <div class="model-name">llama2-13b.gguf</div>
+                    <div class="model-info">
+                        Size: 7.8 GB | Format: GGUF
+                        <span class="status-badge status-available">Available</span>
+                    </div>
+                    <div class="model-actions">
+                        <button class="model-btn success" onclick="testModelLoad('llama2-13b.gguf')">📥 Load</button>
+                        <button class="model-btn danger">🗑️ Delete</button>
+                    </div>
+                </div>
+                
+                <div class="model-card" data-model-id="current">
+                    <div class="model-name">Currently Loaded Model</div>
+                    <div class="model-info">
+                        Test unload functionality
+                        <span class="status-badge status-loaded">Loaded</span>
+                    </div>
+                    <div class="model-actions">
+                        <button class="model-btn" onclick="testModelUnload()">📤 Unload</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Log Output</h2>
+            <div id="logOutput" style="background: #222; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+        </div>
+    </div>
+    
+    <script src="static/js/llm.js"></script>
+    <script>
+        // Test functions
+        function log(message) {
+            const logElement = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function testLoadingProgress() {
+            log('Testing loading progress...');
+            const modelId = 'test_model_1';
+            
+            llmManager.showSpinner(modelId);
+            llmManager.updateProgress(modelId, 'initializing', 10, 'Starting up...');
+            
+            setTimeout(() => {
+                llmManager.updateProgress(modelId, 'loading', 30, 'Loading model file...');
+            }, 1000);
+            
+            setTimeout(() => {
+                llmManager.updateProgress(modelId, 'quantizing', 60, 'Applying quantization...');
+            }, 2000);
+            
+            setTimeout(() => {
+                llmManager.updateProgress(modelId, 'finalizing', 90, 'Almost done...');
+            }, 3000);
+            
+            setTimeout(() => {
+                llmManager.updateProgress(modelId, 'complete', 100, 'Complete!');
+                llmManager.hideSpinner(modelId);
+                llmManager.hideProgress(modelId);
+                llmManager.showToast('Model loaded successfully!', 'success');
+                log('Loading progress test completed');
+            }, 4000);
+        }
+        
+        function testSuccessToast() {
+            llmManager.showToast('This is a success message!', 'success');
+            log('Success toast displayed');
+        }
+        
+        function testErrorToast() {
+            llmManager.showToast('OOM on GPU - Model too large for available GPU memory', 'error');
+            log('Error toast displayed');
+        }
+        
+        function testSpinner() {
+            const modelId = 'test_model_2';
+            llmManager.showSpinner(modelId);
+            log('Spinner shown');
+            
+            setTimeout(() => {
+                llmManager.hideSpinner(modelId);
+                log('Spinner hidden');
+            }, 3000);
+        }
+        
+        async function testModelLoad(modelName) {
+            log(`Testing model load: ${modelName}`);
+            try {
+                // This will use the fallback method since we don't have a real server
+                await llmManager.loadModelFallback(modelName);
+            } catch (error) {
+                log(`Load test failed: ${error.message}`);
+            }
+        }
+        
+        async function testModelUnload() {
+            log('Testing model unload');
+            try {
+                await llmManager.unloadModel();
+            } catch (error) {
+                log(`Unload test failed: ${error.message}`);
+            }
+        }
+        
+        // Initialize
+        log('LLM Progress UI Test initialized');
+        log('SSE enabled: ' + llmManager.sseEnabled);
+    </script>
+</body>
+</html>
+

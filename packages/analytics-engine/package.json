@@ -1,0 +1,44 @@
+{
+  "name": "@mptcp-suite/analytics-engine",
+  "version": "1.0.0",
+  "description": "Core analytics processing engine for MPTCP Performance Analytics Suite",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./python": "./python/analytics_engine.py"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@influxdata/influxdb-client": "^1.33.2",
+    "redis": "^4.6.13",
+    "ws": "^8.16.0",
+    "eventemitter3": "^5.0.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.8",
+    "@types/ws": "^8.5.10"
+  },
+  "keywords": [
+    "analytics",
+    "mptcp",
+    "performance",
+    "metrics",
+    "processing"
+  ]
+}
+

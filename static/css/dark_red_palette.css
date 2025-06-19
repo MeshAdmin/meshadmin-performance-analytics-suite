@@ -1,0 +1,59 @@
+/**
+ * Dark Red Palette Design Tokens
+ * Primary design system variables for dark red theme implementation
+ */
+
+:root {
+  /* Primary Design Tokens */
+  --accent-color: #8B0000;      /* dark red - primary accent */
+  --accent-color-light: #C50000; /* lighter red for hover states */
+  --primary-bg: #000000;        /* pure black - banner + page background */
+  
+  /* Supporting Variables */
+  --secondary-bg: #1a1a1a;      /* slightly lighter for cards */
+  --tertiary-bg: #2d2d2d;       /* interactive elements */
+  --primary-text: #f0f0f0;      /* main text color */
+  --secondary-text: #aaaaaa;    /* secondary text */
+  --border-color: #333333;      /* borders and dividers */
+  
+  /* State Colors */
+  --warning-color: #ff9800;
+  --error-color: #cf6679;
+  --success-color: #4caf50;
+  --info-color: #2196f3;
+  
+  /* Layout Variables */
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --hover-bg: rgba(255, 255, 255, 0.1);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  
+  /* Legacy Variable Mapping - Remove these after refactoring */
+  --accent-primary: var(--accent-color);
+  --accent-secondary: var(--accent-color-light);
+}
+
+/* Button styles using new palette */
+.btn-primary {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-color-light);
+}
+
+/* Badge styles using new palette */
+.badge-primary {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+/* Link styles using new palette */
+a {
+  color: var(--accent-color);
+}
+
+a:hover {
+  color: var(--accent-color-light);
+}
+

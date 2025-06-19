@@ -46,4 +46,6 @@ if __name__ == "__main__":
     background_thread.start()
     
     # Start Flask app
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    import os
+    port = int(os.environ.get('PORT', 8081))  # Use PORT env var or default to 8081
+    app.run(host="0.0.0.0", port=port, debug=True)

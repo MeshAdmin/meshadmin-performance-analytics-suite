@@ -109,7 +109,12 @@ function fetchDashboardData(dashboardId) {
             dashboardWidgets = sampleData.widgets || [];
             renderDashboard();
             
-            showNotification('Using sample dashboard data', 'info');
+            // Use central notification system
+            if (typeof notify !== 'undefined') {
+                notify('warning', 'Failed to load dashboard data. Using sample data.');
+            } else {
+                console.warn('Failed to load dashboard data. Using sample data.');
+            }
         })
         .finally(() => {
             showDashboardLoading(false);
@@ -834,7 +839,11 @@ function refreshWidget(widgetId) {
         })
         .catch(error => {
             console.error('Error refreshing widget:', error);
-            showNotification(`Failed to refresh widget: ${widget.name}`, 'error');
+            if (typeof notify !== 'undefined') {
+                notify('error', `Failed to refresh widget: ${widget.name}`);
+            } else {
+                console.error(`Failed to refresh widget: ${widget.name}`);
+            }
         })
         .finally(() => {
             showWidgetLoading(widgetId, false);
@@ -1000,7 +1009,11 @@ function updateWidget() {
     })
     .catch(error => {
         console.error('Error updating widget:', error);
-        showNotification('Failed to update widget', 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to update widget');
+        } else {
+            console.error('Failed to update widget');
+        }
     })
     .finally(() => {
         closeModal('widget-settings-modal');
@@ -1042,7 +1055,11 @@ function deleteWidget() {
     })
     .catch(error => {
         console.error('Error deleting widget:', error);
-        showNotification('Failed to delete widget', 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to delete widget');
+        } else {
+            console.error('Failed to delete widget');
+        }
     })
     .finally(() => {
         closeModal('widget-settings-modal');
@@ -1112,7 +1129,11 @@ function addWidget() {
     })
     .catch(error => {
         console.error('Error creating widget:', error);
-        showNotification('Failed to create widget', 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to create widget');
+        } else {
+            console.error('Failed to create widget');
+        }
     })
     .finally(() => {
         closeModal('add-widget-modal');
@@ -1381,7 +1402,11 @@ function createDashboard() {
     })
     .catch(error => {
         console.error('Error creating dashboard:', error);
-        showNotification('Failed to create dashboard', 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to create dashboard');
+        } else {
+            console.error('Failed to create dashboard');
+        }
     })
     .finally(() => {
         closeModal('create-dashboard-modal');
@@ -1441,7 +1466,11 @@ function saveDashboard() {
     })
     .catch(error => {
         console.error('Error updating dashboard:', error);
-        showNotification('Failed to update dashboard', 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to update dashboard');
+        } else {
+            console.error('Failed to update dashboard');
+        }
     })
     .finally(() => {
         closeModal('edit-dashboard-modal');
@@ -1479,7 +1508,11 @@ function deleteDashboard() {
     })
     .catch(error => {
         console.error('Error deleting dashboard:', error);
-        showNotification('Failed to delete dashboard', 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Failed to delete dashboard');
+        } else {
+            console.error('Failed to delete dashboard');
+        }
     })
     .finally(() => {
         closeModal('edit-dashboard-modal');

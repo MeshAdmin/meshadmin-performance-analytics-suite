@@ -47,6 +47,29 @@ test_server_ports = None
 # Initialize analytics collector
 analytics_collector.set_lb_manager(lb_manager)
 
+# Initialize Analytics Integration
+lb_analytics_integration = None
+try:
+    from analytics_integration import setup_analytics_integration
+    lb_analytics_integration = setup_analytics_integration(
+        app, 
+        lb_manager,
+        config={
+            'analytics_interval': 15.0,  # 15 seconds
+            'collection_interval': 20.0,  # 20 seconds
+            'max_history': 300
+        }
+    )
+    if lb_analytics_integration:
+        lb_analytics_integration.start()
+        logger.info("✅ Load Balancer Analytics Integration initialized")
+except ImportError as e:
+    logger.warning(f"Analytics integration not available: {e}")
+    lb_analytics_integration = None
+except Exception as e:
+    logger.error(f"Error initializing analytics integration: {e}")
+    lb_analytics_integration = None
+
 # Store test client results in a global variable
 test_client_results = []
 
@@ -206,6 +229,14 @@ def start():
 @app.route('/stop')
 def stop():
     """Stop the load balancer."""
+    # Stop analytics integration
+    if lb_analytics_integration:
+        try:
+            lb_analytics_integration.stop()
+            logger.info("✅ Load Balancer Analytics Integration stopped")
+        except Exception as e:
+            logger.error(f"Error stopping analytics integration: {e}")
+    
     # Stop analytics collector
     analytics_collector.stop()
     
@@ -314,13 +345,20 @@ def get_stats():
     # Get syslog configuration
     syslog_config = syslog_forwarder.get_config()
     
+    # Get analytics integration status
+    analytics_status = {
+        "integration_active": lb_analytics_integration is not None and lb_analytics_integration.is_running(),
+        "integration_available": lb_analytics_integration is not None
+    }
+    
     return jsonify({
         "stats": stats,
         "connections": connections,
         "is_running": lb_manager.is_running(),
         "backend_servers": backend_servers,
         "algorithm": algorithm,
-        "syslog": syslog_config
+        "syslog": syslog_config,
+        "analytics": analytics_status
     })
 
 @app.route('/api/connections')
@@ -467,6 +505,29 @@ def plot_analytics():
     # Convert to JSON
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON
+
+@app.route('/api/analytics/status')
+def get_analytics_status():
+    """Get analytics integration status and metrics."""
+    status = {
+        "integration_active": lb_analytics_integration is not None and lb_analytics_integration.is_running(),
+        "analytics_engine_connected": False,
+        "last_sync_time": None,
+        "metrics_collected": 0,
+        "events_processed": 0,
+        "correlation_data_available": False
+    }
+    
+    if lb_analytics_integration:
+        try:
+            # Get detailed status from the integration
+            integration_status = lb_analytics_integration.get_status()
+            status.update(integration_status)
+        except Exception as e:
+            logger.error(f"Error getting analytics integration status: {e}")
+            status["error"] = str(e)
+    
+    return jsonify(status)
 
 @app.route('/api/syslog/config', methods=['POST'])
 def update_syslog_config():

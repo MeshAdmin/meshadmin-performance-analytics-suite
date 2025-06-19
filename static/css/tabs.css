@@ -1,0 +1,264 @@
+/* Tab Navigation Styles */
+.tab-navigation {
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 2rem;
+    background: #fff;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.tab-nav-item {
+    margin-right: 1rem;
+}
+
+.tab-nav-link {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: #6c757d;
+    text-decoration: none;
+    border-radius: 10px 10px 0 0;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    position: relative;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.tab-nav-link:hover {
+    color: #495057;
+    background: #f8f9fa;
+}
+
+.tab-nav-link.active {
+    color: #495057;
+    background: #fff;
+    border-bottom: 3px solid #007bff;
+    font-weight: 600;
+}
+
+.tab-nav-link.active::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #fff;
+}
+
+/* Tab Content Styles */
+.tab-content {
+    padding: 0;
+}
+
+.tab-pane {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tab Icons */
+.tab-nav-link i {
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+}
+
+/* Responsive Tab Navigation */
+@media (max-width: 768px) {
+    .tab-nav {
+        justify-content: center;
+    }
+    
+    .tab-nav-item {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .tab-nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Side Flyout Modal Styles */
+.flyout-modal {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 500px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+    z-index: 1050;
+    transition: right 0.3s ease-in-out;
+    overflow-y: auto;
+}
+
+.flyout-modal.show {
+    right: 0;
+}
+
+.flyout-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+}
+
+.flyout-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.flyout-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flyout-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.flyout-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    margin-left: auto;
+    transition: color 0.3s ease;
+}
+
+.flyout-close:hover {
+    color: #495057;
+}
+
+.flyout-body {
+    padding: 2rem;
+}
+
+.flyout-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #dee2e6;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Responsive Flyout */
+@media (max-width: 768px) {
+    .flyout-modal {
+        width: 100%;
+        right: -100%;
+    }
+}
+
+/* Tab Content Sections */
+.tab-section {
+    background: #fff;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    min-height: 600px;
+}
+
+/* Enhanced Card Styles for Tab Content */
+.tab-section .status-card {
+    margin-bottom: 1.5rem;
+}
+
+.tab-section .chart-container {
+    margin-bottom: 1.5rem;
+}
+
+/* Tab Badge for Notifications */
+.tab-badge {
+    background: #dc3545;
+    color: #fff;
+    border-radius: 50%;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+.tab-badge.warning {
+    background: #ffc107;
+    color: #000;
+}
+
+.tab-badge.success {
+    background: #28a745;
+}
+
+/* Action Buttons in Tabs */
+.tab-actions {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tab-actions .btn {
+    margin-right: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Loading State for Tabs */
+.tab-loading {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.tab-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Empty State for Tabs */
+.tab-empty {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.tab-empty i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+

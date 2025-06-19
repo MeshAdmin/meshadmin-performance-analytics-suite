@@ -336,7 +336,11 @@ function saveAlertRule() {
         return response.json();
     })
     .then(data => {
-        showNotification(`Alert rule ${ruleId ? 'updated' : 'created'} successfully`, 'success');
+        if (typeof notify !== 'undefined') {
+            notify('success', `Alert rule ${ruleId ? 'updated' : 'created'} successfully`);
+        } else {
+            console.log(`Alert rule ${ruleId ? 'updated' : 'created'} successfully`);
+        }
         closeModal('alert-rule-modal');
         
         // Reload rules list
@@ -344,7 +348,11 @@ function saveAlertRule() {
     })
     .catch(error => {
         console.error('Error saving alert rule:', error);
-        showNotification(`Error ${ruleId ? 'updating' : 'creating'} alert rule`, 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', `Error ${ruleId ? 'updating' : 'creating'} alert rule`);
+        } else {
+            console.error(`Error ${ruleId ? 'updating' : 'creating'} alert rule`);
+        }
     });
 }
 
@@ -367,11 +375,19 @@ function updateAlertRuleStatus(ruleId, enabled) {
         return response.json();
     })
     .then(data => {
-        showNotification(`Alert rule ${enabled ? 'enabled' : 'disabled'}`, 'success');
+        if (typeof notify !== 'undefined') {
+            notify('success', `Alert rule ${enabled ? 'enabled' : 'disabled'}`);
+        } else {
+            console.log(`Alert rule ${enabled ? 'enabled' : 'disabled'}`);
+        }
     })
     .catch(error => {
         console.error('Error updating alert rule status:', error);
-        showNotification('Error updating alert rule status', 'error');
+        if (typeof notify !== 'undefined') {
+            notify('error', 'Error updating alert rule status');
+        } else {
+            console.error('Error updating alert rule status');
+        }
         
         // Revert toggle
         const toggle = document.getElementById(`status-toggle-${ruleId}`);
@@ -394,7 +410,11 @@ function editAlertRule(ruleId) {
         })
         .catch(error => {
             console.error('Error fetching alert rule:', error);
-            showNotification('Error fetching alert rule', 'error');
+            if (typeof notify !== 'undefined') {
+                notify('error', 'Error fetching alert rule');
+            } else {
+                console.error('Error fetching alert rule');
+            }
         });
 }
 

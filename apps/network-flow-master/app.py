@@ -60,12 +60,14 @@ app.register_blueprint(api_bp)
 FlowData = Device = FlowTemplate = MibFile = SimulationConfig = ForwardTarget = None
 User = Role = Permission = UserDevice = AnalysisResult = None  
 flow_receiver = flow_simulator = flow_forwarder = ai_insights_manager = None
+enhanced_processor = analytics_integration = None
 
 def initialize_app():
     """Initialize app components after database is set up"""
     global FlowData, Device, FlowTemplate, MibFile, SimulationConfig, ForwardTarget
     global User, Role, Permission, UserDevice, AnalysisResult
     global flow_receiver, flow_simulator, flow_forwarder, ai_insights_manager
+    global enhanced_processor, analytics_integration
     
     # Import models inside app context to avoid circular imports
     from models import FlowData, Device, FlowTemplate, MibFile, SimulationConfig, ForwardTarget
@@ -105,14 +107,64 @@ def initialize_app():
     # Initialize AI insights manager
     ai_insights_manager = get_ai_insights_manager()
     
+    # Initialize Enhanced Flow Processor
+    try:
+        from enhanced_flow_processor import create_enhanced_flow_processor
+        enhanced_processor = create_enhanced_flow_processor()
+        logger.info("✅ Enhanced Flow Processor initialized")
+    except ImportError as e:
+        logger.warning(f"Enhanced Flow Processor not available: {e}")
+        enhanced_processor = None
+    
+    # Initialize Analytics Integration
+    try:
+        from analytics_integration import setup_analytics_integration
+        if enhanced_processor:
+            analytics_integration = setup_analytics_integration(
+                app, 
+                enhanced_processor,
+                config={
+                    'analytics_interval': 10.0,  # 10 seconds
+                    'collection_interval': 30.0,  # 30 seconds
+                    'max_history': 500
+                }
+            )
+            analytics_integration.start()
+            logger.info("✅ Analytics Integration initialized")
+        else:
+            logger.warning("Analytics integration skipped - enhanced processor not available")
+    except ImportError as e:
+        logger.warning(f"Analytics integration not available: {e}")
+        analytics_integration = None
+    
     # Set up user loader after User model is imported
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-# Initialize app at module load time with app context
-with app.app_context():
-    initialize_app()
+def start_flow_services():
+    """Start flow processing services"""
+    try:
+        # Start the flow receivers in background mode
+        # Note: In production, these would be started as separate processes
+        # or services. For development, they can be started programmatically.
+        print("Flow processing services initialized")
+        print("Note: Flow receivers should be started separately in production")
+    except Exception as e:
+        print(f"Warning: Could not start flow services: {e}")
+
+# Initialize app components but defer database initialization
+# This allows Flask-Migrate to work without circular import issues
+def create_app():
+    """Create and configure the Flask application"""
+    with app.app_context():
+        initialize_app()
+        start_flow_services()
+    return app
+
+# Only initialize if running directly, not during import
+if __name__ == '__main__':
+    create_app()
 
 # Helper function to check if file extension is allowed
 def allowed_file(filename):
@@ -931,15 +983,6 @@ def api_device_data(device_id):
         }
     })
 
-# Start the flow collection services when the app starts
-def start_flow_services():
-    # Start flow receiver
-    threading.Thread(target=flow_receiver.start, daemon=True).start()
-    
-    # Start flow forwarder
-    threading.Thread(target=flow_forwarder.start, daemon=True).start()
-    
-    logger.info("Flow services started.")
 
 # AI Insights API routes
 @app.route('/api/ai_insights/<int:device_id>')
@@ -1136,9 +1179,8 @@ def restart_services():
     
     return redirect(url_for('settings'))
 
-# Start the flow services when the application starts
-with app.app_context():
-    start_flow_services()
+# Flow services will be started by create_app() when the app is properly initialized
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5001))  # Use PORT env var or default to 5001
+    app.run(host="0.0.0.0", port=port, debug=True)

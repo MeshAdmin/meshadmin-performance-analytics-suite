@@ -1,0 +1,399 @@
+name: Visual Regression & Lighthouse Audits
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  visual-regression-tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install pnpm
+      run: npm install -g pnpm@8.15.1
+      
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Install Python dependencies for apps
+      run: |
+        # Install dependencies for network-flow-master
+        cd apps/network-flow-master
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+        
+        # Install dependencies for observability-dashboard
+        cd apps/observability-dashboard  
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+    
+    - name: Install Playwright browsers
+      run: pnpm exec playwright install --with-deps
+      
+    - name: Create test directories
+      run: |
+        mkdir -p test-results/visual-snapshots
+        mkdir -p test-results/lighthouse
+        mkdir -p test-results/html-report
+        
+    - name: Start applications in background
+      run: |
+        # Start network-flow-master app
+        cd apps/network-flow-master
+        python app.py &
+        echo $! > ../../network-flow.pid
+        cd ../..
+        
+        # Start observability-dashboard app  
+        cd apps/observability-dashboard
+        python app.py &
+        echo $! > ../../dashboard.pid
+        cd ../..
+        
+        # Wait for apps to start
+        sleep 30
+        
+        # Verify apps are running
+        curl -f http://localhost:5000 || (echo "Network Flow app failed to start" && exit 1)
+        curl -f http://localhost:8080 || (echo "Dashboard app failed to start" && exit 1)
+        
+    - name: Run visual regression tests
+      run: pnpm exec playwright test --project=${{ matrix.browser }} tests/e2e/*visual*.spec.ts
+      env:
+        CI: true
+        
+    - name: Stop applications
+      if: always()
+      run: |
+        if [ -f network-flow.pid ]; then kill $(cat network-flow.pid) || true; fi
+        if [ -f dashboard.pid ]; then kill $(cat dashboard.pid) || true; fi
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: visual-test-results-${{ matrix.browser }}
+        path: |
+          test-results/
+          tests/visual-snapshots/
+        retention-days: 30
+        
+    - name: Upload Playwright HTML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report-${{ matrix.browser }}
+        path: test-results/html-report/
+        retention-days: 30
+
+  lighthouse-audits:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install pnpm
+      run: npm install -g pnpm@8.15.1
+      
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Install Python dependencies for apps
+      run: |
+        # Install dependencies for network-flow-master
+        cd apps/network-flow-master
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+        
+        # Install dependencies for observability-dashboard  
+        cd apps/observability-dashboard
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+    
+    - name: Install Playwright Chromium (for Lighthouse)
+      run: pnpm exec playwright install chromium --with-deps
+      
+    - name: Create test directories
+      run: |
+        mkdir -p test-results/lighthouse
+        mkdir -p test-results/html-report
+        
+    - name: Start applications in background
+      run: |
+        # Start network-flow-master app
+        cd apps/network-flow-master
+        python app.py &
+        echo $! > ../../network-flow.pid
+        cd ../..
+        
+        # Start observability-dashboard app  
+        cd apps/observability-dashboard
+        python app.py &
+        echo $! > ../../dashboard.pid
+        cd ../..
+        
+        # Wait for apps to start
+        sleep 30
+        
+        # Verify apps are running
+        curl -f http://localhost:5000 || (echo "Network Flow app failed to start" && exit 1)
+        curl -f http://localhost:8080 || (echo "Dashboard app failed to start" && exit 1)
+        
+    - name: Run Lighthouse audits
+      run: |
+        # Start Chrome in debugging mode for Lighthouse
+        google-chrome --remote-debugging-port=9222 --headless --disable-gpu --no-sandbox &
+        sleep 5
+        
+        # Run Lighthouse tests with Chromium only
+        pnpm exec playwright test --project=chromium tests/e2e/lighthouse-audit.spec.ts
+      env:
+        CI: true
+        
+    - name: Stop applications
+      if: always()
+      run: |
+        if [ -f network-flow.pid ]; then kill $(cat network-flow.pid) || true; fi
+        if [ -f dashboard.pid ]; then kill $(cat dashboard.pid) || true; fi
+        pkill -f "chrome.*remote-debugging-port" || true
+        
+    - name: Upload Lighthouse reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: lighthouse-reports
+        path: test-results/lighthouse/
+        retention-days: 30
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: lighthouse-test-results
+        path: test-results/
+        retention-days: 30
+
+  accessibility-audit:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install pnpm
+      run: npm install -g pnpm@8.15.1
+      
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Install Python dependencies for apps
+      run: |
+        cd apps/network-flow-master
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+        
+        cd apps/observability-dashboard
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+    
+    - name: Install Playwright browsers
+      run: pnpm exec playwright install chromium --with-deps
+      
+    - name: Install axe-core for accessibility testing
+      run: pnpm add -D @axe-core/playwright
+        
+    - name: Start applications
+      run: |
+        cd apps/network-flow-master
+        python app.py &
+        echo $! > ../../network-flow.pid
+        cd ../..
+        
+        cd apps/observability-dashboard
+        python app.py &
+        echo $! > ../../dashboard.pid
+        cd ../..
+        
+        sleep 30
+        curl -f http://localhost:5000 || exit 1
+        curl -f http://localhost:8080 || exit 1
+        
+    - name: Run accessibility tests
+      run: |
+        google-chrome --remote-debugging-port=9222 --headless --disable-gpu --no-sandbox &
+        sleep 5
+        pnpm exec playwright test --project=chromium tests/e2e/lighthouse-audit.spec.ts --grep "accessibility"
+      env:
+        CI: true
+        
+    - name: Stop applications
+      if: always()
+      run: |
+        if [ -f network-flow.pid ]; then kill $(cat network-flow.pid) || true; fi
+        if [ -f dashboard.pid ]; then kill $(cat dashboard.pid) || true; fi
+        pkill -f "chrome.*remote-debugging-port" || true
+        
+    - name: Upload accessibility reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: accessibility-reports
+        path: test-results/
+        retention-days: 30
+
+  performance-budget-check:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install pnpm
+      run: npm install -g pnpm@8.15.1
+      
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Install Python dependencies
+      run: |
+        cd apps/network-flow-master
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+        
+        cd apps/observability-dashboard
+        python -m pip install --upgrade pip  
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../..
+    
+    - name: Install Playwright Chromium
+      run: pnpm exec playwright install chromium --with-deps
+        
+    - name: Start applications
+      run: |
+        cd apps/network-flow-master
+        python app.py &
+        echo $! > ../../network-flow.pid
+        cd ../..
+        
+        cd apps/observability-dashboard
+        python app.py &
+        echo $! > ../../dashboard.pid
+        cd ../..
+        
+        sleep 30
+        curl -f http://localhost:5000 || exit 1
+        curl -f http://localhost:8080 || exit 1
+        
+    - name: Run performance budget tests
+      run: |
+        google-chrome --remote-debugging-port=9222 --headless --disable-gpu --no-sandbox &
+        sleep 5
+        pnpm exec playwright test --project=chromium tests/e2e/lighthouse-audit.spec.ts --grep "budget"
+      env:
+        CI: true
+        
+    - name: Stop applications
+      if: always()
+      run: |
+        if [ -f network-flow.pid ]; then kill $(cat network-flow.pid) || true; fi
+        if [ -f dashboard.pid ]; then kill $(cat dashboard.pid) || true; fi
+        pkill -f "chrome.*remote-debugging-port" || true
+        
+    - name: Upload performance reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-budget-reports
+        path: test-results/
+        retention-days: 30
+
+  notify-results:
+    runs-on: ubuntu-22.04
+    needs: [visual-regression-tests, lighthouse-audits, accessibility-audit, performance-budget-check]
+    if: always()
+    
+    steps:
+    - name: Check job results
+      run: |
+        echo "Visual Regression Tests: ${{ needs.visual-regression-tests.result }}"
+        echo "Lighthouse Audits: ${{ needs.lighthouse-audits.result }}"
+        echo "Accessibility Audit: ${{ needs.accessibility-audit.result }}"
+        echo "Performance Budget: ${{ needs.performance-budget-check.result }}"
+        
+        if [[ "${{ needs.visual-regression-tests.result }}" == "failure" || 
+              "${{ needs.lighthouse-audits.result }}" == "failure" || 
+              "${{ needs.accessibility-audit.result }}" == "failure" || 
+              "${{ needs.performance-budget-check.result }}" == "failure" ]]; then
+          echo "❌ One or more quality checks failed"
+          exit 1
+        else
+          echo "✅ All quality checks passed"
+        fi
+

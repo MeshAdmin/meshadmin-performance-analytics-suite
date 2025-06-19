@@ -80,6 +80,28 @@ with app.app_context():
     # Start scheduler
     scheduler.start()
     
+    # Initialize Analytics Integration
+    observability_analytics_integration = None
+    try:
+        from analytics_integration import setup_analytics_integration
+        observability_analytics_integration = setup_analytics_integration(
+            app,
+            config={
+                'analytics_interval': 30.0,  # 30 seconds
+                'collection_interval': 45.0,  # 45 seconds
+                'max_history': 1000
+            }
+        )
+        if observability_analytics_integration:
+            observability_analytics_integration.start()
+            logger.info("✅ Observability Dashboard Analytics Integration initialized")
+    except ImportError as e:
+        logger.warning(f"Analytics integration not available: {e}")
+        observability_analytics_integration = None
+    except Exception as e:
+        logger.error(f"Error initializing analytics integration: {e}")
+        observability_analytics_integration = None
+    
     # Add template context processor for active alerts count
     @app.context_processor
     def inject_alert_counts():

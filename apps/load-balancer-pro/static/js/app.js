@@ -45,7 +45,12 @@ function fetchStats() {
             // Update server tooltips if available
             updateServerTooltipData(data.backend_servers);
         })
-        .catch(error => console.error('Error fetching stats:', error));
+        .catch(error => {
+            console.error('Error fetching stats:', error);
+            if (typeof notify !== 'undefined') {
+                notify('error', 'Failed to fetch load balancer statistics');
+            }
+        });
 }
 
 // Update stats display
@@ -93,7 +98,12 @@ function fetchConnections() {
         .then(data => {
             updateConnectionsTable(data.connections);
         })
-        .catch(error => console.error('Error fetching connections:', error));
+        .catch(error => {
+            console.error('Error fetching connections:', error);
+            if (typeof notify !== 'undefined') {
+                notify('error', 'Failed to fetch connection data');
+            }
+        });
 }
 
 // Update connections table
@@ -172,7 +182,12 @@ function updateTopology() {
         .then(data => {
             topology.updateData(data.connections, data.backend_servers, data);
         })
-        .catch(error => console.error('Error updating topology:', error));
+        .catch(error => {
+            console.error('Error updating topology:', error);
+            if (typeof notify !== 'undefined') {
+                notify('error', 'Failed to update network topology');
+            }
+        });
 }
 
 // Update server tooltip data
@@ -247,7 +262,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     serverTooltips.initialize('[data-server-tooltip]');
                 }
             })
-            .catch(error => console.error('Error initializing server tooltips:', error));
+            .catch(error => {
+                console.error('Error initializing server tooltips:', error);
+                if (typeof notify !== 'undefined') {
+                    notify('error', 'Failed to initialize server tooltips');
+                }
+            });
     }
     
     // Check if D3 and network topology are loaded

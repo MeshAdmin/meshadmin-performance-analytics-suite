@@ -2,9 +2,9 @@
 
 /* Base styles */
 :root {
-    --primary-color: #1976D2;
-    --primary-light: #42A5F5;
-    --primary-dark: #0D47A1;
+    --primary-color: #8B0000;      /* Dark red accent */
+    --primary-light: #C50000;      /* Lighter red for hover states */
+    --primary-dark: #5A0000;       /* Darker red for emphasis */
     --success-color: #388E3C;
     --success-light: #81C784;
     --warning-color: #FFA000;
@@ -21,9 +21,9 @@
 
 /* Dark mode variables */
 .dark-mode {
-    --primary-color: #42A5F5;
-    --primary-light: #90CAF9;
-    --primary-dark: #1976D2;
+    --primary-color: #8B0000;      /* Dark red accent */
+    --primary-light: #C50000;      /* Lighter red for hover states */
+    --primary-dark: #5A0000;       /* Darker red for emphasis */
     --success-color: #4CAF50;
     --success-light: #A5D6A7;
     --warning-color: #FFC107;
@@ -33,8 +33,8 @@
     --text-color: #FFFFFF;
     --text-secondary: #CCCCCC;
     --border-color: #424242;
-    --background-color: #121212;
-    --card-background: #1E1E1E;
+    --background-color: #000000;   /* Pure black background */
+    --card-background: #1a1a1a;    /* Consistent with design tokens */
     --hover-background: #2C2C2C;
 }
 
@@ -149,7 +149,7 @@ body {
 
 /* Active connection styling with enhanced contrast that persists on hover */
 .active-connection {
-    background-color: rgba(25, 118, 210, 0.2);
+    background-color: rgba(139, 0, 0, 0.2);
     position: relative;
 }
 
@@ -164,7 +164,7 @@ body {
 }
 
 .dark-mode .active-connection {
-    background-color: rgba(66, 165, 245, 0.15);
+    background-color: rgba(139, 0, 0, 0.15);
 }
 
 .dark-mode .active-connection::before {
@@ -173,11 +173,11 @@ body {
 
 /* Keep highlighting on hover */
 .table-hover tbody tr.active-connection:hover {
-    background-color: rgba(25, 118, 210, 0.25) !important;
+    background-color: rgba(139, 0, 0, 0.25) !important;
 }
 
 .dark-mode .table-hover tbody tr.active-connection:hover {
-    background-color: rgba(66, 165, 245, 0.25) !important;
+    background-color: rgba(197, 0, 0, 0.25) !important;
 }
 
 /* Form styling */
@@ -189,7 +189,7 @@ body {
 
 .form-control:focus, .form-select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.1);
+    box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.1);
 }
 
 .dark-mode .form-control, .dark-mode .form-select {

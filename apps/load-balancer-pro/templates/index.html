@@ -10,6 +10,8 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Enhanced Responsive CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-responsive.css') }}">
     
     <!-- D3.js for Network Visualization -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -19,29 +21,29 @@
 </head>
 <body>
     <div class="container-fluid">
-        <header class="mb-4">
-            <div class="row align-items-center py-3">
-                <div class="col-md-6">
+        <header class="mb-4" role="banner">
+            <div class="flex-container" style="align-items: center; justify-content: space-between; padding: 1.5rem 0;">
+                <div class="flex-item" style="flex: 2;">
                     <h1 class="mb-0">
                         <img src="{{ url_for('static', filename='logo.svg') }}" alt="Load Balancer Logo" class="logo me-2">
                         Python Load Balancer
                     </h1>
                 </div>
-                <div class="col-md-6 text-end">
-                    <span class="status-badge {{ 'status-running' if is_running else 'status-stopped' }}">
+                <div class="flex-item" style="flex: 1; text-align: right;">
+                    <span class="status-badge {{ 'status-running' if is_running else 'status-stopped' }}" role="status" aria-live="polite">
                         {{ 'Running' if is_running else 'Stopped' }}
                     </span>
                 </div>
             </div>
         </header>
         
-        <div class="row">
+        <main class="responsive-grid">
             <!-- Configuration Column -->
-            <div class="col-lg-4 mb-4">
+            <section class="config-section">
                 <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Load Balancer Configuration</h5>
-                    </div>
+                    <header class="card-header">
+                        <h2 class="mb-0">Load Balancer Configuration</h2>
+                    </header>
                     <div class="card-body">
                         {% if not is_running %}
                         <form action="{{ url_for('start') }}" method="post">
@@ -77,26 +79,25 @@
                                 {{ form.algorithm(class="form-select") }}
                             </div>
                             
-                            <div class="card mb-3">
-                                <div class="card-header bg-light">
+                            <fieldset class="card">
+                                <legend class="card-header bg-light">
                                     <div class="form-check form-switch">
-                                        {{ form.enable_health_checks(class="form-check-input") }}
+                                        {{ form.enable_health_checks(class="form-check-input", **{"aria-describedby": "health-check-help"}) }}
                                         {{ form.enable_health_checks.label(class="form-check-label") }}
                                     </div>
-                                </div>
+                                    <div id="health-check-help" class="sr-only">Enable or disable health check monitoring for backend servers</div>
+                                </legend>
                                 <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                {{ form.health_check_interval.label(class="form-label") }}
-                                                {{ form.health_check_interval(class="form-control") }}
-                                            </div>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            {{ form.health_check_interval.label(class="form-label") }}
+                                            {{ form.health_check_interval(class="form-control", **{"aria-describedby": "interval-help"}) }}
+                                            <div id="interval-help" class="form-text">How often to check backend server health (in seconds)</div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                {{ form.health_check_timeout.label(class="form-label") }}
-                                                {{ form.health_check_timeout(class="form-control") }}
-                                            </div>
+                                        <div class="form-group">
+                                            {{ form.health_check_timeout.label(class="form-label") }}
+                                            {{ form.health_check_timeout(class="form-control", **{"aria-describedby": "timeout-help"}) }}
+                                            <div id="timeout-help" class="form-text">Maximum time to wait for health check response</div>
                                         </div>
                                     </div>
                                     <div class="row">
@@ -116,28 +117,27 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </fieldset>
                             
-                            <div class="card mb-3">
-                                <div class="card-header bg-light">
+                            <fieldset class="card mb-3">
+                                <legend class="card-header bg-light">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="enable_syslog" name="enable_syslog">
+                                        <input class="form-check-input" type="checkbox" id="enable_syslog" name="enable_syslog" aria-describedby="syslog-help">
                                         <label class="form-check-label" for="enable_syslog">Enable Syslog Forwarding</label>
                                     </div>
-                                </div>
+                                    <div id="syslog-help" class="sr-only">Forward load balancer logs to a remote syslog server</div>
+                                </legend>
                                 <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Syslog Host</label>
-                                                <input type="text" class="form-control" name="syslog_host" value="127.0.0.1">
-                                            </div>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label class="form-label" for="syslog_host">Syslog Host</label>
+                                            <input type="text" class="form-control" id="syslog_host" name="syslog_host" value="127.0.0.1" aria-describedby="syslog-host-help">
+                                            <div id="syslog-host-help" class="form-text">IP address or hostname of the syslog server</div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Syslog Port</label>
-                                                <input type="number" class="form-control" name="syslog_port" value="1514" min="1" max="65535">
-                                            </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="syslog_port">Syslog Port</label>
+                                            <input type="number" class="form-control" id="syslog_port" name="syslog_port" value="1514" min="1" max="65535" aria-describedby="syslog-port-help">
+                                            <div id="syslog-port-help" class="form-text">Port number for syslog communication</div>
                                         </div>
                                     </div>
                                     <div class="row">

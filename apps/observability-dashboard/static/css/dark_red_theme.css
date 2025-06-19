@@ -3,15 +3,16 @@
  */
 
 :root[data-theme="dark_red"] {
-  --primary-bg: #121212;      /* Matte black background */
-  --secondary-bg: #1e1e1e;    /* Slightly lighter black for containers */
-  --tertiary-bg: #2d2d2d;     /* Even lighter black for interactive elements */
+  --primary-bg: #000000;      /* Pure black banner + page background */
+  --secondary-bg: #1a1a1a;    /* Slightly lighter for cards */
+  --tertiary-bg: #2d2d2d;     /* Interactive elements */
   --hover-bg: rgba(255, 255, 255, 0.05);
   --primary-text: #f0f0f0;
   --secondary-text: #aaaaaa;
-  --accent-color: #c50000;    /* Dark red accent color */
+  --accent-color: #8B0000;    /* Dark red accent */
+  --accent-color-light: #C50000; /* Lighter red for hover states */
   --border-color: #333333;
-  --card-bg: #1e1e1e;
+  --card-bg: rgba(255, 255, 255, 0.05);
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   --warning-color: #ffc107;
   --success-color: #4caf50;

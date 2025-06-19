@@ -1,0 +1,411 @@
+/* Enhanced Responsive CSS for Modern Grid and Flex Layouts */
+
+/* CSS Custom Properties for consistent spacing and sizing */
+:root {
+  --grid-gap: clamp(1rem, 2.5vw, 2rem);
+  --card-min-width: clamp(280px, 30vw, 400px);
+  --metric-min-width: clamp(200px, 25vw, 300px);
+  --chart-min-width: clamp(350px, 45vw, 600px);
+  --border-radius: clamp(8px, 1vw, 12px);
+  --padding-base: clamp(1rem, 2vw, 1.5rem);
+  --font-size-fluid: clamp(0.875rem, 2vw, 1.125rem);
+}
+
+/* Modern Responsive Grid Layouts */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-min-width), 1fr));
+  gap: var(--grid-gap);
+  align-items: stretch;
+  container-type: inline-size;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--metric-min-width), 1fr));
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  margin-bottom: 2rem;
+  container-type: inline-size;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--chart-min-width), 1fr));
+  gap: var(--grid-gap);
+  align-items: stretch;
+  container-type: inline-size;
+}
+
+/* Flexible container layouts */
+.flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--grid-gap);
+  align-items: stretch;
+}
+
+.flex-item {
+  flex: 1 1 var(--card-min-width);
+  min-width: 0; /* Prevents flex items from overflowing */
+}
+
+/* Auto-fit grid for different content types */
+.auto-fit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--grid-gap);
+  container-type: inline-size;
+}
+
+/* Dashboard specific grid layouts */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-auto-rows: minmax(250px, auto);
+  gap: var(--grid-gap);
+  container-type: inline-size;
+}
+
+/* Widget sizing with modern grid approach */
+.widget {
+  container-type: inline-size;
+  min-height: clamp(200px, 25vh, 400px);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Widget size variations using subgrid where supported */
+.widget.small {
+  grid-column: span 1;
+  grid-row: span 1;
+  min-height: clamp(150px, 20vh, 250px);
+}
+
+.widget.medium {
+  grid-column: span 1;
+  grid-row: span 2;
+  min-height: clamp(300px, 40vh, 500px);
+}
+
+.widget.large {
+  grid-column: span 2;
+  grid-row: span 2;
+  min-height: clamp(300px, 40vh, 500px);
+}
+
+.widget.extra-large {
+  grid-column: span 3;
+  grid-row: span 2;
+  min-height: clamp(300px, 40vh, 500px);
+}
+
+/* Enhanced card layouts */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--grid-gap);
+  container-type: inline-size;
+}
+
+.status-card,
+.chart-container,
+.content-card {
+  container-type: inline-size;
+  border-radius: var(--border-radius);
+  padding: var(--padding-base);
+  transition: all 0.2s ease;
+}
+
+/* Container Queries for Adaptive Layouts */
+@container (max-width: 300px) {
+  .metric-value {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+  }
+  
+  .metric-label {
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+  }
+  
+  .card-title {
+    font-size: clamp(1rem, 3vw, 1.25rem);
+  }
+  
+  .widget-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@container (min-width: 400px) {
+  .metric-value {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+  }
+  
+  .metric-label {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+  }
+  
+  .card-body {
+    padding: clamp(1.5rem, 3vw, 2rem);
+  }
+}
+
+@container (min-width: 600px) {
+  .widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .widget-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+/* Modern utility classes with clamp() */
+.space-y-fluid > * + * {
+  margin-top: clamp(0.5rem, 2vw, 1rem);
+}
+
+.space-x-fluid > * + * {
+  margin-left: clamp(0.5rem, 2vw, 1rem);
+}
+
+.p-fluid {
+  padding: var(--padding-base);
+}
+
+.gap-fluid {
+  gap: var(--grid-gap);
+}
+
+/* Enhanced responsive typography */
+.text-fluid {
+  font-size: var(--font-size-fluid);
+  line-height: 1.6;
+}
+
+.text-fluid-lg {
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  line-height: 1.4;
+}
+
+.text-fluid-xl {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  line-height: 1.2;
+}
+
+/* Navigation enhancements */
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.nav-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  align-items: center;
+}
+
+/* Form layouts */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.form-grid.dense {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Media queries for fallback support */
+@media (max-width: 480px) {
+  .responsive-grid,
+  .metrics-grid,
+  .charts-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .widget.large,
+  .widget.extra-large {
+    grid-column: span 1;
+  }
+  
+  .flex-container {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .responsive-grid,
+  .charts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .widget.extra-large {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .charts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card,
+  .widget,
+  .status-card {
+    border: 2px solid currentColor;
+  }
+  
+  .metric-value {
+    font-weight: bold;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .widget,
+  .status-card,
+  .chart-container {
+    transition: none;
+  }
+  
+  .widget:hover {
+    transform: none;
+  }
+}
+
+/* Dark mode adaptations */
+@media (prefers-color-scheme: dark) {
+  .responsive-grid,
+  .metrics-grid,
+  .charts-grid {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius);
+  }
+}
+
+/* Print styles */
+@media print {
+  .responsive-grid,
+  .metrics-grid,
+  .charts-grid {
+    display: block;
+    break-inside: avoid;
+  }
+  
+  .widget {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+  
+  .widget:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Focus management for accessibility */
+.widget:focus-within {
+  outline: 2px solid var(--accent-color, #007bff);
+  outline-offset: 2px;
+}
+
+/* Loading states */
+.grid-loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--grid-gap);
+}
+
+.grid-loading .skeleton {
+  height: 200px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--border-radius);
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ARIA and accessibility enhancements */
+[aria-hidden="true"] {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Custom dropdown styling for better accessibility */
+.form-control:focus {
+  outline: 2px solid var(--accent-color, #007bff);
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+/* Enhanced button group layouts */
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-group.vertical {
+  flex-direction: column;
+}
+
+.btn-group.responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+}
+

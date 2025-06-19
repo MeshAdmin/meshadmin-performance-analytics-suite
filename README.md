@@ -2,6 +2,9 @@
 
 Comprehensive network flow monitoring, load balancing analytics, and observability dashboard with real-time metrics.
 
+![MPTCP Performance Analytics Suite Dashboard](docs/images/dashboard-v0.9-ui-redesign.png)
+*The new v0.9 UI featuring the Dark Red theme with improved navigation, real-time metrics, and customizable theming*
+
 ## Overview
 
 The MPTCP Performance Analytics Suite provides a complete solution for monitoring, analyzing, and optimizing MPTCP network performance. This mono-repository consolidates multiple performance analytics tools into a unified platform designed specifically for MPTCP environments.
@@ -73,6 +76,8 @@ This suite consists of the following integrated components:
 - pnpm 8.x or later
 - InfluxDB 2.x (for time-series data)
 - Redis 6.x or later (for caching)
+- Python 3.11+ (for observability dashboard)
+- Sass compiler (for theme building)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### Installation
@@ -94,6 +99,9 @@ docker-compose up -d influxdb redis
 
 # Build all packages
 pnpm build
+
+# Build themes and styles
+pnpm scss:build
 
 # Start development servers
 pnpm dev
@@ -246,6 +254,205 @@ kubectl apply -f infrastructure/k8s/
 
 # Port forward for local access
 kubectl port-forward svc/analytics-dashboard 3000:3000
+```
+
+## UI Theming System
+
+### Overview
+
+The UI redesign includes a powerful theming system that supports:
+- Multiple built-in themes (Dark Red, Dark, Light)
+- Custom color wheel for accent colors
+- Real-time theme switching
+- CSS custom properties for seamless transitions
+- Theme persistence across sessions
+
+### Available Themes
+
+#### 1. Dark Red Theme (Default)
+- **Primary Background**: Pure black (#000000)
+- **Secondary Background**: Dark grey (#1a1a1a)
+- **Accent Color**: Dark red (#8B0000)
+- **Text**: Light colors for high contrast
+
+#### 2. Dark Theme
+- **Primary Background**: Pure black (#000000)
+- **Secondary Background**: Dark grey (#1a1a1a)
+- **Accent Color**: Teal (#03dac6)
+- **Text**: Light colors for high contrast
+
+#### 3. Light Theme
+- **Primary Background**: Light grey (#f5f5f5)
+- **Secondary Background**: White (#ffffff)
+- **Accent Color**: Teal green (#018786)
+- **Text**: Dark colors for readability
+
+### Building Themes
+
+```bash
+# Build all themes and styles (production)
+pnpm scss:build
+
+# Build with source maps for development
+pnpm scss:build:dev
+
+# Watch for changes during development
+pnpm scss:watch
+
+# Watch with source maps
+pnpm scss:watch:dev
+```
+
+### Creating Custom Themes
+
+#### Method 1: Using the Color Wheel (Runtime)
+
+1. Click the color wheel icon in the sidebar footer
+2. Choose a new accent color
+3. Toggle between light/dark modes
+4. Click "Apply" to save your custom theme
+
+#### Method 2: Creating Theme Files
+
+1. Create a new CSS file in `apps/observability-dashboard/static/css/`:
+
+```css
+/* custom_theme.css */
+:root[data-theme="custom"] {
+  --primary-bg: #your-bg-color;
+  --secondary-bg: #your-secondary-bg;
+  --accent-color: #your-accent-color;
+  --primary-text: #your-text-color;
+  /* ... other variables */
+}
+```
+
+2. Add the theme to the theme selector in `themes.js`:
+
+```javascript
+const colorSchemes = {
+  // ... existing themes
+  custom: {
+    name: 'Custom Theme',
+    id: 'custom',
+    primaryBg: '#your-bg-color',
+    // ... other properties
+  }
+};
+```
+
+### Theme Variables
+
+All themes use CSS custom properties for consistency:
+
+```css
+:root {
+  --primary-bg: /* Main background color */
+  --secondary-bg: /* Card and sidebar backgrounds */
+  --tertiary-bg: /* Interactive elements */
+  --primary-text: /* Main text color */
+  --secondary-text: /* Secondary text color */
+  --accent-color: /* Brand/highlight color */
+  --border-color: /* Border and separator color */
+  --hover-bg: /* Hover state background */
+  --shadow: /* Box shadow definition */
+}
+```
+
+### SCSS Architecture
+
+The theming system is built using SCSS with the following structure:
+
+```
+apps/observability-dashboard/src/scss/
+├── abstracts/
+│   ├── _variables.scss    # Theme variables and color definitions
+│   ├── _mixins.scss      # Theming mixins and utilities
+│   └── _index.scss       # Abstracts barrel file
+└── main.scss             # Main stylesheet with CSS custom properties
+```
+
+### Integration with Applications
+
+Themes are automatically applied across all applications:
+
+- **Observability Dashboard**: Full theming support with live switching
+- **Network Flow Master**: Inherits theme variables for consistency
+- **Load Balancer Pro**: Uses shared theme system
+
+## Build Commands
+
+### Complete Build Process
+
+```bash
+# Full production build
+pnpm build
+
+# Development build with file watching
+pnpm dev
+
+# Build specific application
+pnpm --filter observability-dashboard build
+pnpm --filter network-flow-master build
+```
+
+### SCSS/Theme Building
+
+```bash
+# Production theme build (minified, no source maps)
+pnpm scss:build
+
+# Development build (with source maps)
+pnpm scss:build:dev
+
+# Watch mode for development
+pnpm scss:watch
+pnpm scss:watch:dev  # With source maps
+```
+
+### Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Visual regression tests (includes theme testing)
+pnpm test:visual
+
+# Accessibility tests across themes
+pnpm test:accessibility
+
+# End-to-end tests
+pnpm test:e2e
+
+# Performance tests
+pnpm test:performance
+
+# Complete QA suite
+pnpm test:qa
+```
+
+### Docker Operations
+
+```bash
+# Build Docker images
+pnpm docker:build
+
+# Start services
+pnpm docker:up
+
+# Stop services
+pnpm docker:down
+```
+
+### Kubernetes Deployment
+
+```bash
+# Deploy to Kubernetes
+pnpm k8s:deploy
+
+# Remove from Kubernetes
+pnpm k8s:delete
 ```
 
 ## Monitoring & Alerting

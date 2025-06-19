@@ -28,10 +28,10 @@
                 </button>
             </span>
         </div>
-        <div class="dashboard-controls">
+        <nav class="dashboard-controls" aria-label="Dashboard controls">
             <div class="time-range-selector">
                 <label for="time-range">Time Range:</label>
-                <select id="time-range" class="form-control">
+                <select id="time-range" class="form-control" aria-label="Select time range">
                     <option value="1h">Last Hour</option>
                     <option value="3h">Last 3 Hours</option>
                     <option value="12h">Last 12 Hours</option>
@@ -44,7 +44,7 @@
             </div>
             <div class="refresh-control">
                 <label for="auto-refresh">Refresh:</label>
-                <select id="auto-refresh" class="form-control">
+                <select id="auto-refresh" class="form-control" aria-label="Select auto-refresh interval">
                     <option value="off">Off</option>
                     <option value="10s">10 seconds</option>
                     <option value="30s" selected>30 seconds</option>
@@ -53,10 +53,10 @@
                     <option value="15m">15 minutes</option>
                 </select>
             </div>
-            <button class="btn btn-primary" id="add-widget-btn">
-                <i class="fas fa-plus"></i> Add Widget
+            <button class="btn btn-primary" id="add-widget-btn" aria-label="Add new widget">
+                <i class="fas fa-plus" aria-hidden="true"></i> Add Widget
             </button>
-        </div>
+        </nav>
     </div>
 </div>
 
@@ -67,71 +67,77 @@
 </div>
 
 <!-- Dashboard grid will be populated by JavaScript -->
-<div id="dashboard-grid" class="dashboard-grid">
+<section id="dashboard-grid" class="responsive-grid" aria-label="Dashboard widgets">
     <!-- Widget placeholders will appear here -->
-</div>
+</section>
 
 <!-- Custom Time Range Modal -->
-<div class="modal" id="custom-time-modal">
+<div class="modal" id="custom-time-modal" role="dialog" aria-labelledby="custom-time-modal-title" aria-modal="true">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>Custom Time Range</h3>
-            <button class="modal-close" onclick="closeModal('custom-time-modal')">&times;</button>
-        </div>
+        <header class="modal-header">
+            <h3 id="custom-time-modal-title">Custom Time Range</h3>
+            <button class="modal-close" onclick="closeModal('custom-time-modal')" aria-label="Close custom time range dialog">&times;</button>
+        </header>
         <div class="modal-body">
             <div class="form-group">
                 <label for="custom-start-time">Start Time</label>
-                <input type="datetime-local" id="custom-start-time" class="form-control">
+                <input type="datetime-local" id="custom-start-time" class="form-control" aria-describedby="custom-start-time-help">
+                <div id="custom-start-time-help" class="form-text">Select the start date and time for the custom range</div>
             </div>
             <div class="form-group">
                 <label for="custom-end-time">End Time</label>
-                <input type="datetime-local" id="custom-end-time" class="form-control">
+                <input type="datetime-local" id="custom-end-time" class="form-control" aria-describedby="custom-end-time-help">
+                <div id="custom-end-time-help" class="form-text">Select the end date and time for the custom range</div>
             </div>
         </div>
-        <div class="modal-footer">
+        <footer class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('custom-time-modal')">Cancel</button>
             <button class="btn btn-primary" id="apply-custom-time-btn">Apply</button>
-        </div>
+        </footer>
     </div>
 </div>
 
 <!-- Add Widget Modal -->
-<div class="modal" id="add-widget-modal">
+<div class="modal" id="add-widget-modal" role="dialog" aria-labelledby="add-widget-modal-title" aria-modal="true">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>Add Widget</h3>
-            <button class="modal-close" onclick="closeModal('add-widget-modal')">&times;</button>
-        </div>
+        <header class="modal-header">
+            <h3 id="add-widget-modal-title">Add Widget</h3>
+            <button class="modal-close" onclick="closeModal('add-widget-modal')" aria-label="Close add widget dialog">&times;</button>
+        </header>
         <div class="modal-body">
-            <div class="form-group">
-                <label for="widget-name">Widget Name</label>
-                <input type="text" id="widget-name" class="form-control" placeholder="Enter widget name">
-            </div>
-            <div class="form-group">
-                <label for="widget-type">Widget Type</label>
-                <select id="widget-type" class="form-control">
-                    <option value="">Select a type</option>
-                    <option value="line-chart">Line Chart</option>
-                    <option value="bar-chart">Bar Chart</option>
-                    <option value="pie-chart">Pie Chart</option>
-                    <option value="gauge">Gauge</option>
-                    <option value="stat">Statistics</option>
-                    <option value="table">Table</option>
-                    <option value="alert-list">Alert List</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="widget-data-source">Data Source</label>
-                <select id="widget-data-source" class="form-control">
-                    <option value="">Select a data source</option>
-                    <option value="SYSLOG">Syslog</option>
-                    <option value="SNMP">SNMP Traps</option>
-                    <option value="NETFLOW">NetFlow</option>
-                    <option value="SFLOW">sFlow</option>
-                    <option value="WINDOWS_EVENTS">Windows Events</option>
-                    <option value="OTEL">OpenTelemetry</option>
-                </select>
-            </div>
+            <form id="add-widget-form">
+                <div class="form-group">
+                    <label for="widget-name">Widget Name</label>
+                    <input type="text" id="widget-name" class="form-control" placeholder="Enter widget name" required aria-describedby="widget-name-help">
+                    <div id="widget-name-help" class="form-text">Provide a descriptive name for this widget</div>
+                </div>
+                <div class="form-group">
+                    <label for="widget-type">Widget Type</label>
+                    <select id="widget-type" class="form-control" required aria-describedby="widget-type-help">
+                        <option value="">Select a type</option>
+                        <option value="line-chart">Line Chart</option>
+                        <option value="bar-chart">Bar Chart</option>
+                        <option value="pie-chart">Pie Chart</option>
+                        <option value="gauge">Gauge</option>
+                        <option value="stat">Statistics</option>
+                        <option value="table">Table</option>
+                        <option value="alert-list">Alert List</option>
+                    </select>
+                    <div id="widget-type-help" class="form-text">Choose the visualization type for your data</div>
+                </div>
+                <div class="form-group">
+                    <label for="widget-data-source">Data Source</label>
+                    <select id="widget-data-source" class="form-control" required aria-describedby="widget-data-source-help">
+                        <option value="">Select a data source</option>
+                        <option value="SYSLOG">Syslog</option>
+                        <option value="SNMP">SNMP Traps</option>
+                        <option value="NETFLOW">NetFlow</option>
+                        <option value="SFLOW">sFlow</option>
+                        <option value="WINDOWS_EVENTS">Windows Events</option>
+                        <option value="OTEL">OpenTelemetry</option>
+                    </select>
+                    <div id="widget-data-source-help" class="form-text">Select the data source for this widget</div>
+                </div>
             
             <!-- Widget configuration will be dynamically populated based on widget type -->
             <div id="widget-config-options"></div>

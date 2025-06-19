@@ -1,0 +1,133 @@
+# Dependencies
+node_modules/
+*/node_modules/
+.pnpm-store/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Test artifacts
+test-results/
+playwright-report/
+.playwright/
+
+# Visual regression test artifacts
+tests/visual-snapshots-tmp/
+*-actual.png
+*-diff.png
+*-expected.png
+
+# Lighthouse reports (local only - CI artifacts are preserved)
+lighthouse-reports/
+.lighthouse/
+
+# Coverage reports
+coverage/
+.nyc_output/
+*.lcov
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Package manager
+.yarn/
+.pnpm-debug.log
+
+# Turbo
+.turbo/
+
+# Local SSL certificates
+*.pem
+*.key
+*.crt
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Application specific
+network-flow.pid
+dashboard.pid
+*.pid
+
+# Infrastructure secrets
+infrastructure/secrets/
+k8s-secrets/
+
+# Docker volumes
+docker-volumes/
+
+# Backup files
+*.bak
+*.backup
+
+# Keep test snapshots in version control for CI comparison
+# Remove this line if you want to exclude visual snapshots completely
+# tests/visual-snapshots/
+
+# But exclude test result directories
+test-results/
+tests/test-results/
+tests/e2e-results/
+

@@ -1,0 +1,156 @@
+// =================================================================
+// SCSS Variables - MeshAdmin Observability Dashboard
+// =================================================================
+
+// Color Palette - Dark Red Theme
+// =================================================================
+$color-pure-black: #000000;
+$color-dark-grey: #1a1a1a;
+$color-medium-grey: #2d2d2d;
+$color-light-grey: #333333;
+$color-primary-text: #f0f0f0;
+$color-secondary-text: #aaaaaa;
+
+// Brand Colors
+$color-primary: #8B0000;        // Dark red accent
+$color-primary-light: #C50000;  // Lighter red for hover states
+$color-primary-dark: #660000;   // Darker red for pressed states
+
+// Semantic Colors
+$color-warning: #ff9800;
+$color-error: #cf6679;
+$color-success: #4caf50;
+$color-info: #2196f3;
+$color-critical: #FF4136;
+
+// Background Colors
+$bg-primary: $color-pure-black;
+$bg-secondary: $color-dark-grey;
+$bg-tertiary: $color-medium-grey;
+$bg-card: rgba(255, 255, 255, 0.05);
+$bg-hover: rgba(255, 255, 255, 0.1);
+
+// Border Colors
+$border-primary: $color-light-grey;
+
+// Shadow Definitions
+$shadow-default: 0 4px 6px rgba(0, 0, 0, 0.3);
+$shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.4);
+$shadow-modal: 0 0 20px rgba(0, 0, 0, 0.4);
+
+// Typography
+// =================================================================
+$font-family-primary: 'Roboto', 'Segoe UI', Arial, sans-serif;
+$font-family-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+
+// Font Sizes
+$font-size-xs: 0.75rem;    // 12px
+$font-size-sm: 0.85rem;    // 13.6px
+$font-size-base: 0.9rem;   // 14.4px
+$font-size-md: 1rem;       // 16px
+$font-size-lg: 1.25rem;    // 20px
+$font-size-xl: 1.5rem;     // 24px
+$font-size-2xl: 1.75rem;   // 28px
+$font-size-3xl: 2rem;      // 32px
+
+// Font Weights
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Line Heights
+$line-height-tight: 1.25;
+$line-height-base: 1.6;
+$line-height-relaxed: 1.75;
+
+// Spacing Scale
+// =================================================================
+$spacing-xs: 0.25rem;   // 4px
+$spacing-sm: 0.5rem;    // 8px
+$spacing-base: 1rem;    // 16px
+$spacing-md: 1.5rem;    // 24px
+$spacing-lg: 2rem;      // 32px
+$spacing-xl: 2.5rem;    // 40px
+$spacing-2xl: 3rem;     // 48px
+
+// Component Specific Spacing
+$padding-btn: 8px 16px;
+$padding-btn-sm: 6px 12px;
+$padding-btn-lg: 10px 20px;
+$padding-card: 20px;
+$padding-form-control: 10px;
+
+// Border Radius
+// =================================================================
+$border-radius-sm: 4px;
+$border-radius-base: 8px;
+$border-radius-lg: 12px;
+$border-radius-pill: 50px;
+
+// Transitions
+// =================================================================
+$transition-fast: 0.2s ease;
+$transition-base: 0.3s ease;
+$transition-slow: 0.4s ease;
+
+// Common transition combinations
+$transition-color: color $transition-base;
+$transition-background: background-color $transition-base;
+$transition-transform: transform $transition-base;
+$transition-all: all $transition-base;
+
+// Layout & Grid
+// =================================================================
+$container-max-width: 1200px;
+$sidebar-width: 240px;
+$sidebar-collapsed-width: 60px;
+$header-height: 60px;
+
+// Grid breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+
+// Z-index Scale
+// =================================================================
+$z-index-dropdown: 100;
+$z-index-sticky: 100;
+$z-index-fixed: 1000;
+$z-index-modal-backdrop: 1000;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+
+// Component Sizes
+// =================================================================
+$toggle-width: 50px;
+$toggle-height: 24px;
+$toggle-width-sm: 40px;
+$toggle-height-sm: 20px;
+
+$spinner-size: 40px;
+$spinner-border-width: 4px;
+
+// Form Elements
+// =================================================================
+$input-height: 40px;
+$input-height-sm: 32px;
+$input-height-lg: 48px;
+
+// Status Colors for specific use cases
+// =================================================================
+$status-online: $color-success;
+$status-offline: $color-error;
+$status-warning: $color-warning;
+$status-pending: $color-info;
+
+// Alert severity colors
+$alert-critical: $color-critical;
+$alert-error: $color-error;
+$alert-warning: $color-warning;
+$alert-info: $color-info;
+$alert-success: $color-success;
+

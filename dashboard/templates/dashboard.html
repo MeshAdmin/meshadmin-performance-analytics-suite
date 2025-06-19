@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeshAdmin Performance Analytics Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Custom Tab System CSS -->
+    <link href="{{ url_for('static', filename='css/tabs.css') }}" rel="stylesheet">
+    <!-- Enhanced Responsive CSS -->
+    <link href="{{ url_for('static', filename='css/enhanced-responsive.css') }}" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-bg: #000000;
+            --card-bg: #1a1a1a;
+            --primary-text: #ffffff;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-header {
+            background: #000;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .status-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .status-healthy {
+            border-left: 5px solid #28a745;
+        }
+        
+        .status-warning {
+            border-left: 5px solid #ffc107;
+        }
+        
+        .status-error {
+            border-left: 5px solid #dc3545;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-item {
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .correlation-score {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+        
+        .correlation-high {
+            color: #28a745;
+        }
+        
+        .correlation-medium {
+            color: #ffc107;
+        }
+        
+        .correlation-low {
+            color: #dc3545;
+        }
+        
+        .trend-icon {
+            font-size: 1.5rem;
+        }
+        
+        .trend-up {
+            color: #28a745;
+        }
+        
+        .trend-down {
+            color: #dc3545;
+        }
+        
+        .trend-stable {
+            color: #6c757d;
+        }
+        
+        .refresh-indicator {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Predictive analytics cards with improved contrast */
+        .predictive-analytics-card {
+            background: var(--card-bg) !important;
+            color: var(--primary-text) !important;
+        }
+        
+        .predictive-analytics-card .card-title {
+            color: var(--primary-text) !important;
+        }
+        
+        .predictive-analytics-card .metric-value {
+            color: var(--primary-text) !important;
+        }
+        
+        .predictive-analytics-card .metric-label {
+            color: #cccccc !important;
+        }
+        
+        /* Modern responsive grid using CSS Grid and Flexbox */
+        .responsive-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(clamp(280px, 30vw, 400px), 1fr));
+            gap: clamp(1rem, 2.5vw, 2rem);
+            align-items: stretch;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 25vw, 300px), 1fr));
+            gap: clamp(0.75rem, 2vw, 1.5rem);
+            margin-bottom: 2rem;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(clamp(350px, 45vw, 600px), 1fr));
+            gap: clamp(1rem, 2.5vw, 2rem);
+            align-items: stretch;
+        }
+        
+        .flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(1rem, 2vw, 1.5rem);
+        }
+        
+        .flex-item {
+            flex: 1 1 clamp(280px, 30vw, 400px);
+            min-width: 0; /* Prevents flex items from overflowing */
+        }
+        
+        /* Enhanced card styles with better responsiveness */
+        .status-card,
+        .chart-container {
+            container-type: inline-size;
+            min-height: clamp(150px, 20vh, 300px);
+        }
+        
+        /* Container queries for adaptive layouts */
+        @container (max-width: 300px) {
+            .metric-value {
+                font-size: 1.5rem;
+            }
+            .metric-label {
+                font-size: 0.8rem;
+            }
+        }
+        
+        @container (min-width: 400px) {
+            .metric-value {
+                font-size: 3rem;
+            }
+        }
+        
+        /* Contrast outline helper class for QA */
+        .contrast-outline {
+            outline: 2px dashed #00ff00 !important;
+            outline-offset: 2px;
+            position: relative;
+        }
+        
+        .contrast-outline::after {
+            content: 'CONTRAST CHECK';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            background: #00ff00;
+            color: #000;
+            font-size: 10px;
+            padding: 2px 4px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Dashboard Header -->
+    <header class="dashboard-header" role="banner">
+        <div class="container">
+            <div class="flex-container" style="align-items: center; justify-content: space-between;">
+                <div class="flex-item" style="flex: 2;">
+                    <h1 class="mb-0">
+                        <i class="fas fa-chart-line me-3" aria-hidden="true"></i>
+                        MeshAdmin Performance Analytics
+                    </h1>
+                    <p class="mb-0 mt-2">Real-time monitoring and correlation analysis</p>
+                </div>
+                <div class="flex-item" style="flex: 1; text-align: right;">
+                    <div class="btn-group" role="group" aria-label="Dashboard Controls">
+                        {% if monitor_running %}
+                            <a href="/stop_monitor" class="btn btn-outline-light" aria-label="Stop monitoring">
+                                <i class="fas fa-stop me-2" aria-hidden="true"></i>Stop Monitor
+                            </a>
+                        {% else %}
+                            <a href="/start_monitor" class="btn btn-outline-light" aria-label="Start monitoring">
+                                <i class="fas fa-play me-2" aria-hidden="true"></i>Start Monitor
+                            </a>
+                        {% endif %}
+                        <button id="refreshBtn" class="btn btn-outline-light" onclick="refreshDashboard()" aria-label="Refresh dashboard">
+                            <i class="fas fa-sync-alt me-2" aria-hidden="true"></i>Refresh
+                        </button>
+                        <button class="btn btn-outline-light" data-flyout="llm-config-flyout" aria-label="Configure LLM settings">
+                            <i class="fas fa-cog me-2" aria-hidden="true"></i>LLM Config
+                        </button>
+                        <button class="btn btn-outline-light" data-flyout="llm-upload-flyout" aria-label="Upload model">
+                            <i class="fas fa-upload me-2" aria-hidden="true"></i>Upload
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container-fluid" role="main">
+        <!-- Tab Navigation -->
+        <nav class="tab-navigation" role="navigation" aria-label="Dashboard sections">
+            <ul class="tab-nav" role="tablist">
+                <li class="tab-nav-item">
+                    <button class="tab-nav-link" data-tab="system-status" role="tab" aria-selected="false" tabindex="0" aria-controls="system-status">
+                        <i class="fas fa-server" aria-hidden="true"></i>System Status
+                    </button>
+                </li>
+                <li class="tab-nav-item">
+                    <button class="tab-nav-link" data-tab="performance-summary" role="tab" aria-selected="false" tabindex="-1" aria-controls="performance-summary">
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>Performance Summary
+                    </button>
+                </li>
+                <li class="tab-nav-item">
+                    <button class="tab-nav-link" data-tab="ml-insights" role="tab" aria-selected="false" tabindex="-1" aria-controls="ml-insights">
+                        <i class="fas fa-brain" aria-hidden="true"></i>ML Insights
+                    </button>
+                </li>
+                <li class="tab-nav-item">
+                    <button class="tab-nav-link" data-tab="llm-management" role="tab" aria-selected="false" tabindex="-1" aria-controls="llm-management">
+                        <i class="fas fa-robot" aria-hidden="true"></i>LLM Management
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- System Status Tab -->
+            <section id="system-status" class="tab-pane" role="tabpanel" aria-labelledby="system-status-tab">
+                <div class="tab-section">
+                    <header class="tab-actions">
+                        <h2><i class="fas fa-server me-2" aria-hidden="true"></i>System Status Overview</h2>
+                        <p class="text-muted">Monitor the health and status of all system components</p>
+                    </header>
+                    
+                    <div class="metrics-grid">
+                        <div class="status-card {% if dashboard_data.status.monitor_running %}status-healthy{% else %}status-error{% endif %}">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">Monitor Status</h3>
+                                <div class="metric-value" role="img" aria-label="{% if dashboard_data.status.monitor_running %}Monitor is running{% else %}Monitor is stopped{% endif %}">
+                                    {% if dashboard_data.status.monitor_running %}
+                                        <i class="fas fa-check-circle text-success" aria-hidden="true"></i>
+                                    {% else %}
+                                        <i class="fas fa-times-circle text-danger" aria-hidden="true"></i>
+                                    {% endif %}
+                                </div>
+                                <p class="metric-label">
+                                    {% if dashboard_data.status.monitor_running %}Running{% else %}Stopped{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="card status-card {% if dashboard_data.status.apps_status.network_flow_master == 'healthy' %}status-healthy{% else %}status-error{% endif %}">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Network Flow</h5>
+                                    <p class="metric-value">
+                                        {% if dashboard_data.status.apps_status.network_flow_master == 'healthy' %}
+                                            <i class="fas fa-network-wired text-success"></i>
+                                        {% else %}
+                                            <i class="fas fa-exclamation-triangle text-danger"></i>
+                                        {% endif %}
+                                    </p>
+                                    <p class="metric-label">{{ dashboard_data.status.apps_status.network_flow_master|title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="card status-card {% if dashboard_data.status.apps_status.load_balancer_pro == 'healthy' %}status-healthy{% else %}status-error{% endif %}">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Load Balancer</h5>
+                                    <p class="metric-value">
+                                        {% if dashboard_data.status.apps_status.load_balancer_pro == 'healthy' %}
+                                            <i class="fas fa-balance-scale text-success"></i>
+                                        {% else %}
+                                            <i class="fas fa-exclamation-triangle text-danger"></i>
+                                        {% endif %}
+                                    </p>
+                                    <p class="metric-label">{{ dashboard_data.status.apps_status.load_balancer_pro|title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="card status-card {% if dashboard_data.status.analytics_available %}status-healthy{% else %}status-warning{% endif %}">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Analytics Engine</h5>
+                                    <p class="metric-value">
+                                        {% if dashboard_data.status.analytics_available %}
+                                            <i class="fas fa-brain text-success"></i>
+                                        {% else %}
+                                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                                        {% endif %}
+                                    </p>
+                                    <p class="metric-label">
+                                        {% if dashboard_data.status.analytics_available %}Available{% else %}Limited{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Alerts in System Status -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="chart-container">
+                                <h5 class="mb-3">Recent Alerts</h5>
+                                <div id="alertsContainer">
+                                    {% if dashboard_data.alerts %}
+                                        {% for alert in dashboard_data.alerts %}
+                                            <div class="alert alert-{% if alert.type == 'error' %}danger{% elif alert.type == 'warning' %}warning{% else %}info{% endif %} alert-item">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>{{ alert.title }}</strong>
+                                                        <p class="mb-0">{{ alert.message }}</p>
+                                                    </div>
+                                                    <small class="text-muted">{{ alert.timestamp[-8:-3] }}</small>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-check-circle fa-3x mb-3"></i>
+                                            <p>No alerts - system running smoothly</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Summary Tab -->
+            <div id="performance-summary" class="tab-pane" role="tabpanel">
+                <div class="tab-section">
+                    <div class="tab-actions">
+                        <h4><i class="fas fa-chart-bar me-2"></i>Performance Summary</h4>
+                        <p class="text-muted">Comprehensive performance metrics and trends analysis</p>
+                    </div>
+                    
+                    <!-- Performance Metrics Row -->
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            <div class="card status-card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Network Flows</h6>
+                                    <p class="metric-value">{{ dashboard_data.performance_summary.get('total_network_flows', 0) }}</p>
+                                    <p class="metric-label">Total Flows</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="card status-card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Connections</h6>
+                                    <p class="metric-value">{{ dashboard_data.performance_summary.get('total_lb_connections', 0) }}</p>
+                                    <p class="metric-label">LB Connections</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="card status-card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Response Time</h6>
+                                    <p class="metric-value">{{ "%.1f"|format(dashboard_data.performance_summary.get('average_response_time', 0)) }}</p>
+                                    <p class="metric-label">ms</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="card status-card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Packet Rate</h6>
+                                    <p class="metric-value">{{ "%.0f"|format(dashboard_data.performance_summary.get('packet_rate', 0)) }}</p>
+                                    <p class="metric-label">pps</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="card status-card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Health Score</h6>
+                                    <p class="metric-value">{{ "%.0f"|format(dashboard_data.performance_summary.get('health_score', 1.0) * 100) }}%</p>
+                                    <p class="metric-label">Overall</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="card status-card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Correlation</h6>
+                                    {% if dashboard_data.correlation_analysis.available %}
+                                        {% set score = dashboard_data.correlation_analysis.results.correlation_score %}
+                                        <p class="metric-value correlation-score {% if score > 0.7 %}correlation-high{% elif score > 0.4 %}correlation-medium{% else %}correlation-low{% endif %}">
+                                            {{ "%.0f"|format(score * 100) }}%
+                                        </p>
+                                    {% else %}
+                                        <p class="metric-value">--</p>
+                                    {% endif %}
+                                    <p class="metric-label">Analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="row">
+                        <!-- Network Flow Chart -->
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Network Flow Master</h5>
+                                    {% if dashboard_data.trends.network_flow_trend %}
+                                        <span class="trend-icon {% if dashboard_data.trends.network_flow_trend == 'increasing' %}trend-up{% elif dashboard_data.trends.network_flow_trend == 'decreasing' %}trend-down{% else %}trend-stable{% endif %}">
+                                            <i class="fas {% if dashboard_data.trends.network_flow_trend == 'increasing' %}fa-arrow-up{% elif dashboard_data.trends.network_flow_trend == 'decreasing' %}fa-arrow-down{% else %}fa-minus{% endif %}"></i>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div id="networkFlowChart" style="height: 300px;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Load Balancer Chart -->
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Load Balancer Pro</h5>
+                                    {% if dashboard_data.trends.response_time_trend %}
+                                        <span class="trend-icon {% if dashboard_data.trends.response_time_trend == 'increasing' %}trend-up{% elif dashboard_data.trends.response_time_trend == 'decreasing' %}trend-down{% else %}trend-stable{% endif %}">
+                                            <i class="fas {% if dashboard_data.trends.response_time_trend == 'increasing' %}fa-arrow-up{% elif dashboard_data.trends.response_time_trend == 'decreasing' %}fa-arrow-down{% else %}fa-minus{% endif %}"></i>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div id="loadBalancerChart" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Overview -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="chart-container">
+                                <h5 class="mb-3">Performance Overview</h5>
+                                <div id="performanceOverview" style="height: 300px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ML Insights Tab -->
+            <div id="ml-insights" class="tab-pane" role="tabpanel">
+                <div class="tab-section">
+                    <div class="tab-actions">
+                        <h4><i class="fas fa-brain me-2"></i>ML Insights</h4>
+                        <p class="text-muted">Advanced correlation analysis and machine learning insights</p>
+                        <button class="btn btn-primary" onclick="triggerCorrelation()">
+                            <i class="fas fa-sync-alt me-2"></i>Run Correlation Analysis
+                        </button>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Correlation Chart -->
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Correlation Analysis</h5>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="triggerCorrelation()">
+                                        <i class="fas fa-sync-alt me-1"></i>Analyze
+                                    </button>
+                                </div>
+                                <div id="correlationChart" style="height: 300px;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Insights -->
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5 class="mb-3">Correlation Insights</h5>
+                                <div id="insightsContainer">
+                                    {% if dashboard_data.correlation_analysis.available and dashboard_data.correlation_analysis.results.insights %}
+                                        {% for insight in dashboard_data.correlation_analysis.results.insights %}
+                                            <div class="mb-3">
+                                                <i class="fas fa-lightbulb text-warning me-2"></i>
+                                                {{ insight }}
+                                            </div>
+                                        {% endfor %}
+                                        
+                                        <hr>
+                                        <h6>Recommendations:</h6>
+                                        {% for recommendation in dashboard_data.correlation_analysis.results.recommendations %}
+                                            <div class="mb-2">
+                                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                                {{ recommendation }}
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-brain fa-3x mb-3"></i>
+                                            <p>Run correlation analysis to see insights</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LLM Management Tab -->
+            <div id="llm-management" class="tab-pane" role="tabpanel">
+                <div class="tab-section">
+                    <div class="tab-actions">
+                        <h4><i class="fas fa-robot me-2"></i>LLM Management</h4>
+                        <p class="text-muted">Configure and manage Large Language Models for enhanced analytics</p>
+                        <button class="btn btn-primary me-2" data-flyout="llm-config-flyout">
+                            <i class="fas fa-cog me-2"></i>Configure LLM
+                        </button>
+                        <button class="btn btn-success" data-flyout="llm-upload-flyout">
+                            <i class="fas fa-upload me-2"></i>Upload Model
+                        </button>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="chart-container">
+                                <h5 class="mb-3">Available Models</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Model Name</th>
+                                                <th>Type</th>
+                                                <th>Status</th>
+                                                <th>Size</th>
+                                                <th>Last Updated</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>GPT-3.5-Turbo</td>
+                                                <td>Text Generation</td>
+                                                <td><span class="badge bg-success">Active</span></td>
+                                                <td>1.3 GB</td>
+                                                <td>2024-01-15</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" data-flyout="llm-config-flyout">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>BERT-Analytics</td>
+                                                <td>Classification</td>
+                                                <td><span class="badge bg-warning">Idle</span></td>
+                                                <td>400 MB</td>
+                                                <td>2024-01-10</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" data-flyout="llm-config-flyout">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5 class="mb-3">Model Performance</h5>
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                    <p>Performance metrics will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5 class="mb-3">Usage Statistics</h5>
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                                    <p>Usage statistics will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LLM Configuration Flyout -->
+    <div id="llm-config-flyout" class="flyout-modal">
+        <div class="flyout-header">
+            <h3 class="flyout-title">LLM Configuration</h3>
+            <button class="flyout-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="flyout-body">
+            <form id="llm-config-form">
+                <div class="mb-3">
+                    <label for="model-name" class="form-label">Model Name</label>
+                    <input type="text" class="form-control" id="model-name" name="model-name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="model-type" class="form-label">Model Type</label>
+                    <select class="form-select" id="model-type" name="model-type" required>
+                        <option value="">Select model type...</option>
+                        <option value="text-generation">Text Generation</option>
+                        <option value="classification">Classification</option>
+                        <option value="embedding">Embedding</option>
+                        <option value="chat">Chat</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="api-endpoint" class="form-label">API Endpoint</label>
+                    <input type="url" class="form-control" id="api-endpoint" name="api-endpoint" placeholder="https://api.example.com/v1">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="api-key" class="form-label">API Key</label>
+                    <input type="password" class="form-control" id="api-key" name="api-key" placeholder="Enter API key...">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="max-tokens" class="form-label">Max Tokens</label>
+                    <input type="number" class="form-control" id="max-tokens" name="max-tokens" value="2048" min="1" max="8192">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="temperature" class="form-label">Temperature</label>
+                    <input type="range" class="form-range" id="temperature" name="temperature" min="0" max="1" step="0.1" value="0.7">
+                    <div class="d-flex justify-content-between">
+                        <small>0 (Focused)</small>
+                        <small>1 (Creative)</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="enable-model" name="enable-model" checked>
+                        <label class="form-check-label" for="enable-model">
+                            Enable this model
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="flyout-footer">
+            <button type="button" class="btn btn-secondary flyout-close">Cancel</button>
+            <button type="submit" form="llm-config-form" class="btn btn-primary" data-original-text="Save Configuration">Save Configuration</button>
+        </div>
+    </div>
+
+    <!-- LLM Upload Flyout -->
+    <div id="llm-upload-flyout" class="flyout-modal">
+        <div class="flyout-header">
+            <h3 class="flyout-title">Upload LLM Model</h3>
+            <button class="flyout-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="flyout-body">
+            <form id="llm-upload-form">
+                <div class="mb-3">
+                    <label for="llm-file" class="form-label">Model File</label>
+                    <input type="file" class="form-control" id="llm-file" name="llm-file" accept=".bin,.ggml,.safetensors,.pt,.pth" required>
+                    <div class="form-text">Supported formats: .bin, .ggml, .safetensors, .pt, .pth</div>
+                </div>
+                
+                <div id="file-preview" class="mb-3"></div>
+                
+                <div class="mb-3">
+                    <label for="upload-model-name" class="form-label">Model Name</label>
+                    <input type="text" class="form-control" id="upload-model-name" name="upload-model-name" placeholder="Enter a name for this model" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="upload-description" class="form-label">Description</label>
+                    <textarea class="form-control" id="upload-description" name="upload-description" rows="3" placeholder="Describe this model and its capabilities..."></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="upload-model-type" class="form-label">Model Type</label>
+                    <select class="form-select" id="upload-model-type" name="upload-model-type" required>
+                        <option value="">Select model type...</option>
+                        <option value="text-generation">Text Generation</option>
+                        <option value="classification">Classification</option>
+                        <option value="embedding">Embedding</option>
+                        <option value="chat">Chat</option>
+                    </select>
+                </div>
+                
+                <div id="upload-progress" style="display: none;" class="mb-3">
+                    <label class="form-label">Upload Progress</label>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="flyout-footer">
+            <button type="button" class="btn btn-secondary flyout-close">Cancel</button>
+            <button type="submit" form="llm-upload-form" class="btn btn-success" data-original-text="Upload Model">Upload Model</button>
+        </div>
+    </div>
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Tab System JS -->
+    <script src="{{ url_for('static', filename='js/tabs.js') }}"></script>
+    
+    <script>
+        // Dashboard JavaScript functions
+        function refreshDashboard() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            const icon = refreshBtn.querySelector('i');
+            icon.classList.add('refresh-indicator');
+            
+            // Refresh charts
+            loadCharts();
+            
+            // Refresh data (reload page for now)
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+        
+        function triggerCorrelation() {
+            fetch('/api/dashboard/correlation')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Correlation analysis triggered:', data);
+                    // Refresh correlation chart
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                })
+                .catch(error => console.error('Error triggering correlation:', error));
+        }
+        
+        function loadCharts() {
+            fetch('/api/dashboard/charts')
+                .then(response => response.json())
+                .then(charts => {
+                    // Load Network Flow Chart
+                    if (charts.network_flow_chart) {
+                        const networkFlowData = JSON.parse(charts.network_flow_chart);
+                        Plotly.newPlot('networkFlowChart', networkFlowData.data, networkFlowData.layout, {responsive: true});
+                    }
+                    
+                    // Load Load Balancer Chart
+                    if (charts.load_balancer_chart) {
+                        const loadBalancerData = JSON.parse(charts.load_balancer_chart);
+                        Plotly.newPlot('loadBalancerChart', loadBalancerData.data, loadBalancerData.layout, {responsive: true});
+                    }
+                    
+                    // Load Correlation Chart
+                    if (charts.correlation_chart) {
+                        const correlationData = JSON.parse(charts.correlation_chart);
+                        Plotly.newPlot('correlationChart', correlationData.data, correlationData.layout, {responsive: true});
+                    }
+                    
+                    // Load Performance Overview
+                    if (charts.performance_overview) {
+                        const performanceData = JSON.parse(charts.performance_overview);
+                        Plotly.newPlot('performanceOverview', performanceData.data, performanceData.layout, {responsive: true});
+                    }
+                })
+                .catch(error => console.error('Error loading charts:', error));
+        }
+        
+        // Load charts when page loads
+        document.addEventListener('DOMContentLoaded', loadCharts);
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                loadCharts();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
+
