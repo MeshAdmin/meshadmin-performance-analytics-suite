@@ -113,7 +113,7 @@ function updateTemplateInfo(templateId) {
             `;
         })
         .catch(error => {
-            console.error('Error fetching template:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             templateInfo.innerHTML = `
                 <div class="alert alert-danger">
                     Error loading template information. Please try again.
@@ -196,7 +196,7 @@ function loadSimulations() {
             }
         })
         .catch(error => {
-            console.error('Error loading simulations:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
 }
 
@@ -223,7 +223,7 @@ function stopSimulation(simulationId) {
         }
     })
     .catch(error => {
-        console.error('Error stopping simulation:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showAlert('Error stopping simulation. Please try again.', 'danger');
     });
 }

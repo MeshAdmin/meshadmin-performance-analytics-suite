@@ -46,7 +46,7 @@ function fetchStats() {
             updateServerTooltipData(data.backend_servers);
         })
         .catch(error => {
-            console.error('Error fetching stats:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             if (typeof notify !== 'undefined') {
                 notify('error', 'Failed to fetch load balancer statistics');
             }
@@ -99,7 +99,7 @@ function fetchConnections() {
             updateConnectionsTable(data.connections);
         })
         .catch(error => {
-            console.error('Error fetching connections:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             if (typeof notify !== 'undefined') {
                 notify('error', 'Failed to fetch connection data');
             }
@@ -183,7 +183,7 @@ function updateTopology() {
             topology.updateData(data.connections, data.backend_servers, data);
         })
         .catch(error => {
-            console.error('Error updating topology:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             if (typeof notify !== 'undefined') {
                 notify('error', 'Failed to update network topology');
             }
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error initializing server tooltips:', error);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
                 if (typeof notify !== 'undefined') {
                     notify('error', 'Failed to initialize server tooltips');
                 }

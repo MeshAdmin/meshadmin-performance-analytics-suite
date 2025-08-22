@@ -38,7 +38,7 @@ function loadAIInsights(deviceId, timePeriod) {
         .catch(error => {
             hideLoading();
             showError('Failed to load AI insights data. Please try again later.');
-            console.error('Error loading AI insights:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
 }
 

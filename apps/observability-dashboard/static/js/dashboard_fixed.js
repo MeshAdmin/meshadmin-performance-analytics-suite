@@ -171,10 +171,10 @@ function fetchDashboardData(dashboardId) {
             renderDashboard();
         })
         .catch(error => {
-            console.error('Error fetching dashboard data:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             // Add error debug details
             if (error.message) {
-                console.error('Error message:', error.message);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             }
             // Create demo data for testing - this will be removed after the API is fixed
             console.log("Using sample dashboard data for development");
@@ -395,7 +395,7 @@ function renderLineChart(container, widget) {
     // Safely get the canvas element
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
-        console.error(`Canvas element with ID ${canvasId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
         return;
     }
@@ -483,7 +483,7 @@ function renderLineChart(container, widget) {
             }
         });
     } catch (error) {
-        console.error('Error rendering line chart:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
     }
 }
@@ -511,7 +511,7 @@ function renderBarChart(container, widget) {
     // Safely get the canvas element
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
-        console.error(`Canvas element with ID ${canvasId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
         return;
     }
@@ -595,7 +595,7 @@ function renderBarChart(container, widget) {
             }
         });
     } catch (error) {
-        console.error('Error rendering bar chart:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
     }
 }
@@ -622,7 +622,7 @@ function renderPieChart(container, widget) {
     // Safely get the canvas element
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
-        console.error(`Canvas element with ID ${canvasId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
         return;
     }
@@ -673,7 +673,7 @@ function renderPieChart(container, widget) {
             }
         });
     } catch (error) {
-        console.error('Error rendering pie chart:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
     }
 }
@@ -701,7 +701,7 @@ function renderGaugeChart(container, widget) {
     // Safely get the canvas element
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
-        console.error(`Canvas element with ID ${canvasId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
         return;
     }
@@ -725,7 +725,7 @@ function renderGaugeChart(container, widget) {
             color: gaugeColor
         });
     } catch (error) {
-        console.error('Error rendering gauge chart:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         renderNoDataMessage(container);
     }
 }
@@ -913,7 +913,7 @@ function renderTableWidget(container, widget) {
                 try {
                     const date = new Date(cellValue);
                     formattedValue = date.toLocaleString();
-                } catch (e) {
+                } catch (error) {
                     formattedValue = cellValue;
                 }
             } else if (column.type === 'severity' && cellValue) {
@@ -1262,7 +1262,7 @@ function createWidget() {
         refreshDashboard();
     })
     .catch(error => {
-        console.error('Error creating widget:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Failed to create widget', 'error');
     })
     .finally(() => {

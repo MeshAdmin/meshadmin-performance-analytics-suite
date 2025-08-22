@@ -9,7 +9,7 @@ from celery import Celery
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create SQLAlchemy base class

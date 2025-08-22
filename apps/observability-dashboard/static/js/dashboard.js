@@ -97,10 +97,10 @@ function fetchDashboardData(dashboardId) {
             renderDashboard();
         })
         .catch(error => {
-            console.error('Error fetching dashboard data:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             // Add error debug details
             if (error.message) {
-                console.error('Error message:', error.message);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             }
             // Create demo data for testing - this will be removed after the API is fixed
             console.log("Using sample dashboard data for development");
@@ -838,11 +838,11 @@ function refreshWidget(widgetId) {
             }
         })
         .catch(error => {
-            console.error('Error refreshing widget:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             if (typeof notify !== 'undefined') {
                 notify('error', `Failed to refresh widget: ${widget.name}`);
             } else {
-                console.error(`Failed to refresh widget: ${widget.name}`);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             }
         })
         .finally(() => {
@@ -1008,11 +1008,11 @@ function updateWidget() {
         renderDashboard();
     })
     .catch(error => {
-        console.error('Error updating widget:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to update widget');
         } else {
-            console.error('Failed to update widget');
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     })
     .finally(() => {
@@ -1054,11 +1054,11 @@ function deleteWidget() {
         renderDashboard();
     })
     .catch(error => {
-        console.error('Error deleting widget:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to delete widget');
         } else {
-            console.error('Failed to delete widget');
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     })
     .finally(() => {
@@ -1128,11 +1128,11 @@ function addWidget() {
         refreshDashboard();
     })
     .catch(error => {
-        console.error('Error creating widget:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to create widget');
         } else {
-            console.error('Failed to create widget');
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     })
     .finally(() => {
@@ -1401,11 +1401,11 @@ function createDashboard() {
         window.location.href = `/dashboard/${data.id}`;
     })
     .catch(error => {
-        console.error('Error creating dashboard:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to create dashboard');
         } else {
-            console.error('Failed to create dashboard');
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     })
     .finally(() => {
@@ -1465,11 +1465,11 @@ function saveDashboard() {
         }
     })
     .catch(error => {
-        console.error('Error updating dashboard:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to update dashboard');
         } else {
-            console.error('Failed to update dashboard');
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     })
     .finally(() => {
@@ -1507,11 +1507,11 @@ function deleteDashboard() {
         window.location.href = '/dashboard';
     })
     .catch(error => {
-        console.error('Error deleting dashboard:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to delete dashboard');
         } else {
-            console.error('Failed to delete dashboard');
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     })
     .finally(() => {

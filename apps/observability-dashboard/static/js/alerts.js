@@ -347,11 +347,11 @@ function saveAlertRule() {
         window.location.reload();
     })
     .catch(error => {
-        console.error('Error saving alert rule:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', `Error ${ruleId ? 'updating' : 'creating'} alert rule`);
         } else {
-            console.error(`Error ${ruleId ? 'updating' : 'creating'} alert rule`);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     });
 }
@@ -382,11 +382,11 @@ function updateAlertRuleStatus(ruleId, enabled) {
         }
     })
     .catch(error => {
-        console.error('Error updating alert rule status:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Error updating alert rule status');
         } else {
-            console.error('Error updating alert rule status');
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
         
         // Revert toggle
@@ -409,11 +409,11 @@ function editAlertRule(ruleId) {
             showEditAlertModal(rule);
         })
         .catch(error => {
-            console.error('Error fetching alert rule:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             if (typeof notify !== 'undefined') {
                 notify('error', 'Error fetching alert rule');
             } else {
-                console.error('Error fetching alert rule');
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             }
         });
 }
@@ -662,7 +662,7 @@ function acknowledgeAlert(alertId, callback) {
         }
     })
     .catch(error => {
-        console.error('Error acknowledging alert:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Error acknowledging alert', 'error');
     });
 }
@@ -715,7 +715,7 @@ function resolveAlert(alertId, callback) {
         }
     })
     .catch(error => {
-        console.error('Error resolving alert:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Error resolving alert', 'error');
     });
 }
@@ -917,7 +917,7 @@ function bulkAcknowledgeAlerts() {
         updateBulkActionButtons();
     })
     .catch(error => {
-        console.error('Error acknowledging alerts:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Error acknowledging alerts', 'error');
     });
 }
@@ -980,7 +980,7 @@ function bulkResolveAlerts() {
         updateBulkActionButtons();
     })
     .catch(error => {
-        console.error('Error resolving alerts:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Error resolving alerts', 'error');
     });
 }
@@ -1014,7 +1014,7 @@ function checkForNewAlerts() {
             }
         })
         .catch(error => {
-            console.error('Error checking for new alerts:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
 }
 
@@ -1258,7 +1258,7 @@ function updateNotificationSettings() {
         showNotification('Notification settings updated', 'success');
     })
     .catch(error => {
-        console.error('Error updating notification settings:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Error updating notification settings', 'error');
     });
     
@@ -1291,7 +1291,7 @@ function refreshAlerts() {
             }
         })
         .catch(error => {
-            console.error('Error refreshing alerts:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
 }
 

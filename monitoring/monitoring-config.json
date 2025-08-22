@@ -1,0 +1,21 @@
+{
+  "app_name": "meshadmin-performance-analytics-suite",
+  "monitoring": {
+    "enabled": true,
+    "health_check_interval": 30,
+    "metrics_collection": true,
+    "alerting": true,
+    "tracing": true
+  },
+  "endpoints": {
+    "health": "/health",
+    "metrics": "/metrics",
+    "tracing": "/tracing"
+  },
+  "thresholds": {
+    "response_time_ms": 1000,
+    "error_rate_percent": 5.0,
+    "cpu_usage_percent": 80.0,
+    "memory_usage_percent": 85.0
+  }
+}

@@ -253,7 +253,7 @@ class NetworkTopology {
                     });
                 }
             } catch (e) {
-                console.error("Error parsing destination:", e);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             }
         });
         

@@ -89,7 +89,7 @@ function loadFlowStatistics() {
         .catch(error => {
             hideLoading();
             showError('Failed to load flow statistics. Please try again later.');
-            console.error('Error loading flow statistics:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
 }
 
@@ -473,7 +473,7 @@ function viewFlowDetails(flowId) {
         })
         .catch(error => {
             showError('Failed to load flow details. Please try again later.');
-            console.error('Error loading flow details:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
 }
 

@@ -1,3 +1,4 @@
+import { errorHandler, setupErrorHandling } from './src/error-handling';
 /**
  * Interactive tooltips for server metrics
  * This script creates rich, interactive tooltips for displaying server metrics.

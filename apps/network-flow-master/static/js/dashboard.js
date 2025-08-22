@@ -45,7 +45,7 @@ function loadDashboardData(timePeriod = 'hour') {
         .catch(error => {
             hideLoading();
             showError('Failed to load dashboard data. Please try again later.');
-            console.error('Error loading dashboard data:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
 }
 

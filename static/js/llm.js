@@ -195,12 +195,12 @@ class LLMManager {
                                 resolve(data);
                             }
                         } catch (e) {
-                            console.error('Error parsing SSE data:', e);
+                            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
                         }
                     };
 
                     evtSource.onerror = (error) => {
-                        console.error('SSE error:', error);
+                        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
                         this.hideSpinner(modelId);
                         this.hideProgress(modelId);
                         evtSource.close();
@@ -220,7 +220,7 @@ class LLMManager {
                 });
 
             } catch (error) {
-                console.error('SSE setup failed, falling back to regular fetch:', error);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
                 return this.loadModelFallback(modelName);
             }
         } else {
@@ -357,7 +357,7 @@ async function loadModel(modelName) {
         await llmManager.loadModelWithSSE(modelName);
         loadLLMModels(); // Refresh model grid
     } catch (error) {
-        console.error('Model loading failed:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
     }
 }
 
@@ -367,7 +367,7 @@ async function unloadModel() {
         await llmManager.unloadModel();
         loadLLMModels(); // Refresh model grid
     } catch (error) {
-        console.error('Model unloading failed:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
     }
 }
 

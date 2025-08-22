@@ -132,7 +132,7 @@ function getChartColors() {
         
         return colorScheme;
     } catch (error) {
-        console.error("Error getting chart colors:", error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         // Fallback to dark_red scheme
         return {
             ...chartColorSchemes['dark_red'],
@@ -171,7 +171,7 @@ function adjustColorBrightness(color, percent) {
 
         return "#" + RR + GG + BB;
     } catch (error) {
-        console.error("Error adjusting color brightness:", error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return color;
     }
 }
@@ -193,7 +193,7 @@ function adjustColorOpacity(color, opacity) {
 
         return `rgba(${R}, ${G}, ${B}, ${opacity})`;
     } catch (error) {
-        console.error("Error adjusting color opacity:", error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return color;
     }
 }
@@ -208,7 +208,7 @@ function adjustColorOpacity(color, opacity) {
 function createLineChart(elementId, data, options = {}) {
     const ctx = document.getElementById(elementId);
     if (!ctx) {
-        console.error(`Canvas element with ID ${elementId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return null;
     }
     
@@ -284,7 +284,7 @@ function createLineChart(elementId, data, options = {}) {
 function createBarChart(elementId, data, options = {}) {
     const ctx = document.getElementById(elementId);
     if (!ctx) {
-        console.error(`Canvas element with ID ${elementId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return null;
     }
     
@@ -352,7 +352,7 @@ function createBarChart(elementId, data, options = {}) {
 function createPieChart(elementId, data, options = {}) {
     const ctx = document.getElementById(elementId);
     if (!ctx) {
-        console.error(`Canvas element with ID ${elementId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return null;
     }
     
@@ -405,7 +405,7 @@ function createPieChart(elementId, data, options = {}) {
 function createDoughnutChart(elementId, data, options = {}) {
     const ctx = document.getElementById(elementId);
     if (!ctx) {
-        console.error(`Canvas element with ID ${elementId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return null;
     }
     
@@ -460,7 +460,7 @@ function createDoughnutChart(elementId, data, options = {}) {
 function createGaugeChart(elementId, value, label, options = {}) {
     const ctx = document.getElementById(elementId);
     if (!ctx) {
-        console.error(`Canvas element with ID ${elementId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return null;
     }
     
@@ -549,7 +549,7 @@ function createGaugeChart(elementId, value, label, options = {}) {
 function createHeatmap(containerId, data, xLabels, yLabels, options = {}) {
     const container = document.getElementById(containerId);
     if (!container) {
-        console.error(`Container element with ID ${containerId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return;
     }
     
@@ -699,7 +699,7 @@ function createTimeSeriesHeatmap(containerId, data, xLabels, yLabels, options = 
 function createNetworkGraph(containerId, nodes, edges, options = {}) {
     const container = document.getElementById(containerId);
     if (!container) {
-        console.error(`Container element with ID ${containerId} not found`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         return;
     }
     
@@ -891,14 +891,14 @@ function updateChartsForTheme(charts) {
                 // Update chart
                 chart.update();
             } catch (chartError) {
-                console.error(`Error updating chart ${chartIndex}:`, chartError);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
                 // Continue with other charts
             }
         });
         
         console.log("Charts updated for theme");
     } catch (error) {
-        console.error("Critical error updating charts for theme:", error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
     }
 }
 
@@ -929,7 +929,7 @@ function applyThemeToCharts() {
             console.log("Chart library not available yet");
         }
     } catch (error) {
-        console.error("Error applying theme to charts:", error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
     }
 }
 

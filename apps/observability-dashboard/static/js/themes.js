@@ -72,7 +72,7 @@ function cleanupThemeStorage() {
             }
         }
     } catch (error) {
-        console.error('Error cleaning up theme storage:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
     }
 }
 
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Log successful initialization
         console.log("Theme system initialized successfully");
     } catch (error) {
-        console.error("Error initializing theme system:", error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         
         // Fallback to ensure some theme is applied even if there's an error
         try {
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyThemeProperties(colorSchemes.dark_red);
             currentTheme = { ...colorSchemes.dark_red, id: 'dark_red' };
         } catch (e) {
-            console.error("Failed to apply fallback theme:", e);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     }
 });
@@ -160,7 +160,7 @@ function initTheme() {
                 applyCustomTheme(customTheme);
                 console.log("Successfully applied custom theme");
             } catch (e) {
-                console.error('Failed to parse stored custom theme, using default', e);
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
                 applyTheme(storedThemeId);
             }
         } else {
@@ -175,7 +175,7 @@ function initTheme() {
             console.log("Charts update function not available yet");
         }
     } catch (error) {
-        console.error("Error during theme initialization:", error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         
         // Apply default theme as fallback
         try {
@@ -183,7 +183,7 @@ function initTheme() {
             applyThemeProperties(colorSchemes.dark_red);
             currentTheme = { ...colorSchemes.dark_red };
         } catch (e) {
-            console.error("Critical error in theme fallback:", e);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
     }
 }
@@ -195,7 +195,7 @@ function initTheme() {
 function applyTheme(themeId) {
     // Validate theme ID
     if (!colorSchemes[themeId]) {
-        console.error(`Theme ${themeId} does not exist, falling back to dark red theme`);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         themeId = 'dark_red';
     }
     
@@ -295,8 +295,8 @@ function setupThemeToggle() {
             try {
                 const customTheme = JSON.parse(customColors);
                 accentColor = customTheme.accentColor;
-            } catch (e) {
-                console.error('Failed to parse stored custom theme', e);
+            } catch (error) {
+                errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             }
         }
         
@@ -703,7 +703,7 @@ function saveThemePreference(theme) {
             console.log('Saving theme preference:', 
                 typeof theme === 'string' ? theme : 'custom theme');
         } catch (parseError) {
-            console.error('Error preparing theme data:', parseError);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             return;
         }
         
@@ -732,10 +732,10 @@ function saveThemePreference(theme) {
             console.log('Theme preference saved successfully');
         })
         .catch(error => {
-            console.error('Failed to save theme preference:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         });
     } catch (error) {
-        console.error('Critical error in saveThemePreference:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
     }
 }
 

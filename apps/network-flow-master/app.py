@@ -13,7 +13,7 @@ import threading
 from database import db, migrate
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Flask-Login
@@ -94,10 +94,14 @@ def initialize_app():
                 email='admin@flowvision.local',
                 role=admin_role
             )
-            admin_user.set_password('admin')
+            # Generate a random password for production security
+            import secrets
+            import string
+            password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+            admin_user.set_password(password)
             db.session.add(admin_user)
             db.session.commit()
-            print("Created default admin user: username='admin', password='admin'")
+            print(f"Created default admin user: username='admin', password='{password}'")
     
     # Initialize the flow receiver, simulator, and forwarder
     flow_receiver = FlowReceiver()
@@ -259,8 +263,14 @@ def manage_users():
     if not current_user.is_administrator():
         flash('Access denied: You must be an administrator.', 'danger')
         return redirect(url_for('dashboard'))
-        
-    users = User.query.all()
+    
+    # Add pagination for better performance
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    users = User.query.options(db.joinedload(User.role)).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     return render_template('auth/manage_users.html', users=users)
 
 # Routes
@@ -287,7 +297,8 @@ def analyzer():
     if not current_user.has_permission(Permission.VIEW_FLOW_DATA):
         flash('You do not have permission to access the analyzer.', 'danger')
         return redirect(url_for('dashboard'))
-    devices = Device.query.all()
+    # Only load essential device fields for dropdown/selection
+    devices = Device.query.with_entities(Device.id, Device.name, Device.ip_address).all()
     return render_template('analyzer.html', devices=devices)
 
 @app.route('/ai_insights/<int:device_id>')
@@ -321,7 +332,10 @@ def simulator():
     if not current_user.has_permission(Permission.MANAGE_SIMULATIONS):
         flash('You do not have permission to access the simulator.', 'danger')
         return redirect(url_for('dashboard'))
-    templates = FlowTemplate.query.all()
+    # Only load essential template fields for selection
+    templates = FlowTemplate.query.with_entities(
+        FlowTemplate.id, FlowTemplate.name, FlowTemplate.description
+    ).order_by(FlowTemplate.name).all()
     return render_template('simulator.html', templates=templates)
 
 @app.route('/simulations')
@@ -423,7 +437,11 @@ def forwarder():
     if not current_user.has_permission(Permission.MANAGE_FORWARD_TARGETS):
         flash('You do not have permission to access the forwarder.', 'danger')
         return redirect(url_for('dashboard'))
-    targets = ForwardTarget.query.all()
+    # Load targets with pagination for better performance
+    page = request.args.get('page', 1, type=int)
+    targets = ForwardTarget.query.order_by(ForwardTarget.name).paginate(
+        page=page, per_page=50, error_out=False
+    )
     return render_template('forwarder.html', targets=targets)
 
 @app.route('/add_forward_target', methods=['POST'])
@@ -470,7 +488,13 @@ def mib_manager():
         flash('You do not have permission to access the MIB manager.', 'danger')
         return redirect(url_for('dashboard'))
     
-    mibs = MibFile.query.all()
+    # Add pagination and only load essential fields
+    page = request.args.get('page', 1, type=int)
+    mibs = MibFile.query.with_entities(
+        MibFile.id, MibFile.filename, MibFile.device_type, MibFile.description, MibFile.parsed
+    ).order_by(MibFile.filename).paginate(
+        page=page, per_page=25, error_out=False
+    )
     return render_template('mib_manager.html', mibs=mibs)
 
 @app.route('/upload_mib', methods=['POST'])
@@ -679,9 +703,24 @@ def update_settings():
         flash('Settings updated successfully!', 'success')
         return redirect(url_for('settings'))
 
+# Import caching utilities
+try:
+    import sys
+    sys.path.append('../../../tools')
+    from cache_manager import cache_response, QueryCache
+    CACHING_ENABLED = True
+except ImportError:
+    # Fallback if caching not available
+    def cache_response(ttl=300, key_func=None):
+        def decorator(func):
+            return func
+        return decorator
+    CACHING_ENABLED = False
+
 # API endpoints for dashboard data
 @app.route('/api/flow_stats')
 @login_required
+@cache_response(ttl=120)  # Cache for 2 minutes
 def api_flow_stats():
     """
     Get time-based flow statistics for charts
@@ -890,6 +929,7 @@ def api_flow_stats():
 
 @app.route('/api/devices')
 @login_required
+@cache_response(ttl=180)  # Cache for 3 minutes
 def api_devices():
     """Get information about all devices"""
     devices_query = db.session.query(Device).all()
@@ -914,7 +954,8 @@ def api_devices():
     return jsonify({'devices': devices_data})
 
 @app.route('/api/device_data/<int:device_id>')
-@login_required
+@login_required  
+@cache_response(ttl=90)  # Cache for 90 seconds
 def api_device_data(device_id):
     """Get detailed data for a specific device"""
     # Get device info
@@ -1183,4 +1224,4 @@ def restart_services():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))  # Use PORT env var or default to 5001
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)

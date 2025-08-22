@@ -2,12 +2,291 @@ import logging
 import json
 import struct
 import socket
+import asyncio
+import concurrent.futures
 from database import db
 from datetime import datetime
 from storage_manager import get_storage_manager
 from netflow_templates import get_template_manager, parse_field_value
+from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+def async_processor_method(func):
+    """Decorator to make FlowProcessor methods async-compatible"""
+    @wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        if asyncio.iscoroutinefunction(func):
+            return await func(self, *args, **kwargs)
+        
+        # Run CPU-intensive operations in thread pool
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(self.thread_pool, func, self, *args, **kwargs)
+    
+    return wrapper
+
+class AsyncFlowProcessor:
+    """Async version of FlowProcessor for improved concurrent performance"""
+    
+    def __init__(self, max_workers: int = 4, batch_size: int = 100):
+        self.max_workers = max_workers
+        self.batch_size = batch_size
+        
+        # Thread pool for CPU-intensive operations
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+        
+        # Processing queue and semaphore
+        self.processing_queue = asyncio.Queue(maxsize=1000)
+        self.processing_semaphore = asyncio.Semaphore(50)  # Limit concurrent processing
+        
+        # Async batch management
+        self.async_flow_batch = []
+        self.batch_lock = asyncio.Lock()
+        self.last_batch_time = datetime.utcnow()
+        
+        # Initialize sync processor for legacy methods
+        self.sync_processor = FlowProcessor()
+        
+        # Async stats
+        self.async_stats = {
+            'processed_packets': 0,
+            'failed_packets': 0,
+            'concurrent_operations': 0,
+            'avg_processing_time': 0.0
+        }
+        
+        # Worker tasks
+        self.worker_tasks = []
+        self.running = False
+    
+    async def start(self):
+        """Start the async flow processor"""
+        logger.info("Starting async flow processor...")
+        self.running = True
+        
+        # Start worker tasks
+        for i in range(self.max_workers):
+            task = asyncio.create_task(self._async_worker(f"async-worker-{i}"))
+            self.worker_tasks.append(task)
+        
+        logger.info(f"Started {self.max_workers} async flow processing workers")
+    
+    async def stop(self):
+        """Stop the async flow processor"""
+        logger.info("Stopping async flow processor...")
+        self.running = False
+        
+        # Cancel worker tasks
+        for task in self.worker_tasks:
+            if not task.done():
+                task.cancel()
+        
+        # Wait for tasks to complete
+        if self.worker_tasks:
+            await asyncio.gather(*self.worker_tasks, return_exceptions=True)
+        
+        # Shutdown thread pool
+        self.thread_pool.shutdown(wait=True)
+        
+        logger.info("Async flow processor stopped")
+    
+    async def process_packet_async(self, data, addr, port):
+        """Process a packet asynchronously"""
+        start_time = asyncio.get_event_loop().time()
+        
+        async with self.processing_semaphore:
+            try:
+                self.async_stats['concurrent_operations'] += 1
+                
+                # Run CPU-intensive parsing in thread pool
+                loop = asyncio.get_event_loop()
+                flow_data = await loop.run_in_executor(
+                    self.thread_pool,
+                    self.sync_processor.process_packet,
+                    data, addr, port
+                )
+                
+                if flow_data:
+                    # Store flows asynchronously
+                    await self._store_flows_async(flow_data, addr[0])
+                    self.async_stats['processed_packets'] += 1
+                else:
+                    self.async_stats['failed_packets'] += 1
+                
+                # Update processing time stats
+                processing_time = asyncio.get_event_loop().time() - start_time
+                self._update_processing_time(processing_time)
+                
+                return flow_data
+                
+            except Exception as e:
+                logger.error(f"Async packet processing error from {addr[0]}: {e}")
+                self.async_stats['failed_packets'] += 1
+                return None
+            finally:
+                self.async_stats['concurrent_operations'] -= 1
+    
+    async def process_batch_async(self, packet_batch):
+        """Process multiple packets concurrently"""
+        if not packet_batch:
+            return []
+        
+        # Create tasks for each packet
+        tasks = []
+        for data, addr, port in packet_batch:
+            task = asyncio.create_task(self.process_packet_async(data, addr, port))
+            tasks.append(task)
+        
+        # Process all packets concurrently
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Filter out exceptions and None results
+        successful_results = []
+        for result in results:
+            if not isinstance(result, Exception) and result is not None:
+                successful_results.append(result)
+        
+        return successful_results
+    
+    async def _async_worker(self, worker_id: str):
+        """Background worker for processing queued flows"""
+        logger.debug(f"Async worker {worker_id} started")
+        
+        while self.running:
+            try:
+                # Get packet data from queue
+                packet_data = await asyncio.wait_for(
+                    self.processing_queue.get(),
+                    timeout=1.0
+                )
+                
+                # Process the packet
+                await self.process_packet_async(*packet_data)
+                
+                # Mark task as done
+                self.processing_queue.task_done()
+                
+            except asyncio.TimeoutError:
+                # No packets in queue, continue
+                continue
+            except Exception as e:
+                logger.error(f"Error in async worker {worker_id}: {e}")
+                await asyncio.sleep(0.1)
+        
+        logger.debug(f"Async worker {worker_id} stopped")
+    
+    async def _store_flows_async(self, flow_data, source_ip):
+        """Store flow data asynchronously with batching"""
+        async with self.batch_lock:
+            # Add flows to batch
+            if 'flows' in flow_data:
+                for flow in flow_data['flows']:
+                    flow['source_ip'] = source_ip
+                    flow['received_at'] = datetime.utcnow()
+                    self.async_flow_batch.append(flow)
+            
+            # Check if batch is ready for processing
+            current_time = datetime.utcnow()
+            time_since_last_batch = (current_time - self.last_batch_time).total_seconds()
+            
+            if (len(self.async_flow_batch) >= self.batch_size or 
+                time_since_last_batch > 5.0):  # 5 second timeout
+                
+                # Process the batch
+                batch_to_process = self.async_flow_batch.copy()
+                self.async_flow_batch.clear()
+                self.last_batch_time = current_time
+                
+                # Store batch asynchronously
+                await self._flush_async_batch(batch_to_process)
+    
+    async def _flush_async_batch(self, flow_batch):
+        """Flush a batch of flows to storage asynchronously"""
+        if not flow_batch:
+            return
+        
+        try:
+            # Run database operations in thread pool
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                self.thread_pool,
+                self._store_batch_sync,
+                flow_batch
+            )
+            
+            logger.debug(f"Flushed async batch of {len(flow_batch)} flows")
+            
+        except Exception as e:
+            logger.error(f"Error flushing async batch: {e}")
+    
+    def _store_batch_sync(self, flow_batch):
+        """Store batch of flows synchronously (runs in thread pool)"""
+        try:
+            # Import here to avoid circular imports
+            from models import FlowData, Device
+            
+            flow_objects = []
+            
+            for flow in flow_batch:
+                flow_obj = FlowData(
+                    timestamp=flow.get('received_at', datetime.utcnow()),
+                    flow_type=flow.get('flow_type', 'unknown'),
+                    src_ip=flow.get('src_ip', 'unknown'),
+                    dst_ip=flow.get('dst_ip', 'unknown'),
+                    src_port=flow.get('src_port', 0),
+                    dst_port=flow.get('dst_port', 0),
+                    protocol=flow.get('protocol', 0),
+                    bytes=flow.get('bytes', 0),
+                    packets=flow.get('packets', 0),
+                    tos=flow.get('tos', 0),
+                    tcp_flags=flow.get('tcp_flags', 0)
+                )
+                flow_objects.append(flow_obj)
+            
+            # Bulk insert for better performance
+            if flow_objects:
+                db.session.bulk_save_objects(flow_objects)
+                db.session.commit()
+                
+        except Exception as e:
+            logger.error(f"Error in sync batch storage: {e}")
+            try:
+                db.session.rollback()
+            except:
+                pass
+    
+    def _update_processing_time(self, processing_time):
+        """Update average processing time statistics"""
+        if self.async_stats['avg_processing_time'] == 0:
+            self.async_stats['avg_processing_time'] = processing_time
+        else:
+            # Simple moving average
+            self.async_stats['avg_processing_time'] = (
+                self.async_stats['avg_processing_time'] * 0.9 + 
+                processing_time * 0.1
+            )
+    
+    async def add_packet_to_queue(self, data, addr, port):
+        """Add a packet to the processing queue"""
+        try:
+            await self.processing_queue.put((data, addr, port))
+            return True
+        except asyncio.QueueFull:
+            logger.warning("Async processing queue is full, dropping packet")
+            return False
+    
+    async def get_async_stats(self):
+        """Get async processing statistics"""
+        sync_stats = self.sync_processor.get_validation_stats()
+        
+        return {
+            'async_stats': self.async_stats,
+            'sync_stats': sync_stats,
+            'queue_size': self.processing_queue.qsize(),
+            'batch_size': len(self.async_flow_batch),
+            'active_workers': len([t for t in self.worker_tasks if not t.done()]),
+            'thread_pool_active': self.thread_pool._threads,
+        }
 
 class FlowProcessor:
     """

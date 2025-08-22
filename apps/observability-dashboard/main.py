@@ -6,7 +6,7 @@ import logging
 import threading
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -48,4 +48,4 @@ if __name__ == "__main__":
     # Start Flask app
     import os
     port = int(os.environ.get('PORT', 8081))  # Use PORT env var or default to 8081
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)

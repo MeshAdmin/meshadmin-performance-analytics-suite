@@ -116,7 +116,7 @@ function toggleForwardTarget(targetId, button) {
         button.disabled = false;
     })
     .catch(error => {
-        console.error('Error toggling forward target:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to toggle target');
         } else {
@@ -145,7 +145,7 @@ function loadForwarderStats() {
             updateForwarderStats(data);
         })
         .catch(error => {
-            console.error('Error loading forwarder stats:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             if (typeof notify !== 'undefined') {
                 notify('error', 'Failed to load forwarder statistics');
             }
@@ -290,7 +290,7 @@ function deleteForwardTarget(targetId) {
         }
     })
     .catch(error => {
-        console.error('Error deleting forward target:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         if (typeof notify !== 'undefined') {
             notify('error', 'Failed to delete forward target');
         } else {

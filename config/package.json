@@ -1,0 +1,124 @@
+{
+  "name": "mptcp-performance-analytics-suite",
+  "version": "1.0.0",
+  "description": "Comprehensive network flow monitoring, load balancing analytics, and observability dashboard with real-time metrics",
+  "private": true,
+  "type": "module",
+  "homepage": "https://meshadmin.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MeshAdmin/mptcp-performance-analytics-suite.git"
+  },
+  "author": {
+    "name": "MeshAdmin",
+    "email": "info@meshadmin.com",
+    "url": "https://meshadmin.com"
+  },
+  "license": "AGPL-3.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.1",
+  "scripts": {
+    "build": "pnpm --recursive --stream build",
+    "dev": "pnpm --recursive --parallel --stream dev",
+    "start": "pnpm --recursive --parallel --stream start",
+    "test": "pnpm --recursive test",
+    "test:integration": "pnpm --recursive test:integration",
+    "test:coverage": "pnpm --recursive test:coverage",
+    "test:e2e": "pnpm --recursive test:e2e",
+    "test:visual": "./scripts/run-visual-tests.sh visual",
+    "test:lighthouse": "./scripts/run-visual-tests.sh lighthouse",
+    "test:accessibility": "./scripts/run-visual-tests.sh accessibility",
+    "test:performance": "./scripts/run-visual-tests.sh performance",
+    "test:qa": "./scripts/run-visual-tests.sh all",
+    "playwright:install": "playwright install --with-deps",
+    "playwright:test": "playwright test",
+    "playwright:ui": "playwright test --ui",
+    "playwright:report": "playwright show-report",
+    "lint": "pnpm --recursive lint",
+    "lint:fix": "pnpm --recursive lint:fix",
+    "type-check": "pnpm --recursive type-check",
+    "clean": "pnpm --recursive clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,tsx,json,md}\"",
+    "scss:build": "sass --no-source-map apps/observability-dashboard/src/scss/main.scss:apps/observability-dashboard/static/css/styles.css",
+    "scss:watch": "sass --watch --no-source-map apps/observability-dashboard/src/scss/main.scss:apps/observability-dashboard/static/css/styles.css",
+    "scss:build:dev": "sass --source-map apps/observability-dashboard/src/scss/main.scss:apps/observability-dashboard/static/css/styles.css",
+    "scss:watch:dev": "sass --watch --source-map apps/observability-dashboard/src/scss/main.scss:apps/observability-dashboard/static/css/styles.css",
+    "prepare": "husky install",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "k8s:deploy": "kubectl apply -f infrastructure/k8s/",
+    "k8s:delete": "kubectl delete -f infrastructure/k8s/"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "@playwright/test": "^1.53.1",
+    "@types/node": "^20.11.19",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "@vitest/coverage-v8": "^1.3.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.0.11",
+    "lighthouse": "^12.6.1",
+    "lint-staged": "^15.2.2",
+    "playwright": "^1.41.2",
+    "playwright-lighthouse": "^4.0.0",
+    "prettier": "^3.2.5",
+    "sass": "^1.70.0",
+    "turbo": "^1.12.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.1"
+  },
+  "dependencies": {
+    "@influxdata/influxdb-client": "^1.33.2",
+    "redis": "^4.6.13",
+    "ws": "^8.16.0",
+    "events": "^3.3.0",
+    "winston": "^3.11.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.2.55",
+      "@types/react-dom": "^18.2.19"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "keywords": [
+    "mptcp",
+    "performance",
+    "analytics",
+    "monitoring",
+    "network",
+    "load-balancing",
+    "observability",
+    "metrics",
+    "dashboard",
+    "real-time",
+    "flow-analysis",
+    "meshadmin"
+  ]
+}

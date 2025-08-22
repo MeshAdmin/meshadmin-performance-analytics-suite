@@ -266,7 +266,7 @@ function editReportSection(sectionId) {
             sectionDataObj = JSON.parse(sectionData);
         }
     } catch (e) {
-        console.error('Error parsing section data:', e);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
     }
     
     // Create modal for editing section
@@ -683,7 +683,7 @@ function exportReport(format) {
             showNotification(`Report exported as ${format.toUpperCase()}.`, 'success');
         })
         .catch(error => {
-            console.error('Failed to export report:', error);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
             showNotification('Failed to export report.', 'error');
         });
 }
@@ -947,7 +947,7 @@ function saveReport() {
                 data = JSON.parse(dataStr);
             }
         } catch (e) {
-            console.error('Error parsing section data:', e);
+            errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         }
         
         sections.push({
@@ -1068,7 +1068,7 @@ function saveReport() {
         showNotification('Report saved successfully', 'success');
     })
     .catch(error => {
-        console.error('Failed to save report:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Failed to save report', 'error');
     });
 }
@@ -1119,7 +1119,7 @@ function runReport() {
         }
     })
     .catch(error => {
-        console.error('Failed to run report:', error);
+        errorHandler.handleError(error, { service: \'meshadmin-performance-analytics-suite\' });
         showNotification('Failed to run report', 'error');
     });
 }
